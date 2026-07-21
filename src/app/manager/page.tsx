@@ -1,8 +1,8 @@
+import { ManagerDashboard } from "./ManagerDashboard"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import prisma from "@/lib/prisma"
-import { ManagerTaskList } from "@/components/ManagerTaskList"
 
 export default async function ManagerPage() {
   const session = await getServerSession(authOptions)
@@ -16,13 +16,16 @@ export default async function ManagerPage() {
     orderBy: { created_at: "desc" },
   })
 
-  // Serialize dates for client component
-  const serializedTasks = tasks.map((t) => ({
-    ...t,
-    log_date: t.log_date,
-    created_at: t.created_at,
-    edited_at: t.edited_at,
-    updated_at: t.updated_at,
+  const serialized = tasks.map((t) => ({
+    id: t.id,
+    description: t.description,
+    time_taken: t.time_taken,
+    remark: t.remark,
+    status: t.status,
+    manager_edit: t.manager_edit,
+    log_date: t.log_date.toISOString(),
+    created_at: t.created_at.toISOString(),
+    username: t.user.username,
   }))
 
   return (
@@ -32,7 +35,7 @@ export default async function ManagerPage() {
         <p className="text-muted-foreground">Review, edit, and approve daily logs from all employees.</p>
       </div>
 
-      <ManagerTaskList tasks={serializedTasks} />
+      <ManagerDashboard tasks={serialized} />
     </div>
   )
 }

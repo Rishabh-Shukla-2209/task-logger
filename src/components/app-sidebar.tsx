@@ -107,7 +107,7 @@ export function AppSidebar({ role }: { role: string }) {
               <SidebarMenu>
                 {group.items.map((item) => (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild isActive={pathname === item.url || pathname.startsWith(item.url + "/")}>
+                    <SidebarMenuButton render={<Link href={item.url} />} isActive={pathname === item.url || pathname.startsWith(item.url + "/")}>
                       <Link href={item.url}>
                         <item.icon className="mr-2" />
                         <span>{item.title}</span>
@@ -124,7 +124,7 @@ export function AppSidebar({ role }: { role: string }) {
       <div className="mt-auto p-4 border-t">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild>
+            <SidebarMenuButton render={<Link href="/api/auth/signout" />}>
               <Link href="/api/auth/signout" className="text-red-500 hover:text-red-600">
                 <LogOut className="mr-2" />
                 <span>Logout</span>
