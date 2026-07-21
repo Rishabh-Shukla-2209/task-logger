@@ -1,0 +1,200 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── ENUMS ──────────────────────────────────────────────
+
+enum Role {
+  EMPLOYEE
+  MANAGER
+  COORDINATOR
+  ADMIN
+}
+
+enum TaskStatus {
+  LOGGED
+  APPROVED
+  REJECTED
+}
+
+enum QueryType {
+  NEW_SALE
+  RENT
+  SALE_REPAIR
+  RENT_REPAIR
+  SALE_REPLACEMENT
+  RENT_REPLACEMENT
+  GENERAL_REPAIR
+}
+
+enum QueryStatus {
+  RECORDED
+  CONFIRMED
+  DISPATCHED
+  ASSIGNED
+  RECEIVED
+  QC_CHECKED
+  PACKED
+  RESOLVED
+}
+
+enum QuotationStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+}
+
+enum WarrantyStatus {
+  RECORDED
+  PROCESSING
+  COMPLETED
+}
+
+enum InternalRepairStatus {
+  SENT_OUT
+  RECEIVED_BACK
+}
+
+enum PartRequestStatus {
+  PENDING
+  PRICED
+  APPROVED
+  ORDERED
+  RECEIVED
+}
+
+// ─── CORE MODELS ────────────────────────────────────────
+
+model User {
+  id             String            @id @default(uuid())
+  username       String            @unique
+  password       String
+  role           Role              @default(EMPLOYEE)
+  created_at     DateTime          @default(now())
+  updated_at     DateTime          @updatedAt
+
+  // Relations
+  Tasks              Task[]
+  TaskAssignmentsBy  TaskAssignment[]   @relation("AssignedBy")
+  TaskAssignmentsTo  TaskAssignment[]   @relation("AssignedTo")
+  EditedTasks        Task[]             @relation("EditedBy")
+  QueryEvents        QueryEvent[]
+  PartRequests       PartRequest[]      @relation("PartRequester")
+  ReplacementApprovals ServiceQuery[]   @relation("ReplacementApprover")
+}
+
+// ─── MODULE A: WORK LOGGING ─────────────────────────────
+
+model Task {
+  id             String      @id @default(uuid())
+  user_id        String
+  user           User        @relation(fields: [user_id], references: [id])
+  log_date       DateTime    @db.Date
+  description    String
+  time_taken     String?
+  remark         String?
+  status         TaskStatus  @default(LOGGED)
+
+  // Manager audit trail
+  manager_edit   String?
+  edited_by_id   String?
+  edited_by      User?       @relation("EditedBy", fields: [edited_by_id], references: [id])
+  edited_at      DateTime?
+
+  created_at     DateTime    @default(now())
+  updated_at     DateTime    @updatedAt
+}
+
+model TaskAssignment {
+  id              String    @id @default(uuid())
+  assigned_by_id  String
+  assigned_by     User      @relation("AssignedBy", fields: [assigned_by_id], references: [id])
+  assigned_to_id  String
+  assigned_to     User      @relation("AssignedTo", fields: [assigned_to_id], references: [id])
+  description     String
+  due_date        DateTime? @db.Date
+  created_at      DateTime  @default(now())
+}
+
+// ─── MODULE B: SERVICE DESK ─────────────────────────────
+
+model ServiceQuery {
+  id                       String        @id @default(uuid())
+  query_type               QueryType
+  status                   QueryStatus   @default(RECORDED)
+  customer_name            String
+  device_details           String?
+
+  // Replacement audit (for SALE_REPLACEMENT / RENT_REPLACEMENT)
+  replacement_reason       String?
+  replaced_with            String?
+  replacement_approved_by_id String?
+  replacement_approved_by  User?         @relation("ReplacementApprover", fields: [replacement_approved_by_id], references: [id])
+
+  created_at               DateTime      @default(now())
+  updated_at               DateTime      @updatedAt
+  QueryEvents              QueryEvent[]
+}
+
+model QueryEvent {
+  id             String        @id @default(uuid())
+  query_id       String
+  query          ServiceQuery  @relation(fields: [query_id], references: [id], onDelete: Cascade)
+  user_id        String
+  user           User          @relation(fields: [user_id], references: [id])
+  action         String        // e.g. "RECORDED → CONFIRMED"
+  created_at     DateTime      @default(now())
+}
+
+// ─── COORDINATOR MODULES ────────────────────────────────
+
+model Quotation {
+  id             String           @id @default(uuid())
+  customer_name  String
+  description    String
+  amount         String?
+  status         QuotationStatus  @default(DRAFT)
+  created_at     DateTime         @default(now())
+  updated_at     DateTime         @updatedAt
+}
+
+model WarrantyExchange {
+  id               String          @id @default(uuid())
+  customer_name    String
+  device_details   String
+  reason           String
+  exchange_with    String?
+  status           WarrantyStatus  @default(RECORDED)
+  created_at       DateTime        @default(now())
+  updated_at       DateTime        @updatedAt
+}
+
+model InternalRepair {
+  id                String                @id @default(uuid())
+  item_description  String
+  sent_to           String
+  sent_date         DateTime              @db.Date
+  received_date     DateTime?             @db.Date
+  status            InternalRepairStatus  @default(SENT_OUT)
+  notes             String?
+  created_at        DateTime              @default(now())
+  updated_at        DateTime              @updatedAt
+}
+
+model PartRequest {
+  id                     String             @id @default(uuid())
+  part_name              String
+  for_whom               String
+  requested_by_id        String
+  requested_by           User               @relation("PartRequester", fields: [requested_by_id], references: [id])
+  pricing_received_at    DateTime?
+  approved_by_boss_at    DateTime?
+  status                 PartRequestStatus  @default(PENDING)
+  created_at             DateTime           @default(now())
+  updated_at             DateTime           @updatedAt
+}
