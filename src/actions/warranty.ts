@@ -27,7 +27,7 @@ export async function createWarrantyExchange(formData: FormData) {
       device_details: deviceDetails,
       reason,
       exchange_with: exchangeWith || null,
-      status: "RECORDED",
+      status: "ADDED",
     },
   })
 

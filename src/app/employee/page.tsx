@@ -5,6 +5,8 @@ import prisma from "@/lib/prisma"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { EmployeeTaskForm } from "@/components/TaskForm"
+import { EmployeeEditTaskDialog } from "@/components/employee/EmployeeEditTaskDialog"
+import { AssignedTasks } from "@/components/employee/AssignedTasks"
 
 export default async function EmployeePage() {
   const session = await getServerSession(authOptions)
@@ -13,47 +15,58 @@ export default async function EmployeePage() {
     redirect("/")
   }
 
-  const tasks = await prisma.task.findMany({
-    where: { user_id: session.user.id },
+  // Awaiting approval
+  const loggedTasks = await prisma.task.findMany({
+    where: { 
+      user_id: session.user.id,
+      status: "LOGGED"
+    },
     orderBy: { created_at: "desc" },
+  })
+
+  // Pending Manager Assignments
+  const pendingAssignments = await prisma.taskAssignment.findMany({
+    where: {
+      assigned_to_id: session.user.id,
+      status: "PENDING"
+    },
+    include: {
+      assigned_by: {
+        select: { username: true }
+      }
+    },
+    orderBy: { created_at: "desc" }
   })
 
   return (
     <div className="max-w-6xl mx-auto space-y-12">
       <EmployeeTaskForm />
 
+      <AssignedTasks assignments={pendingAssignments} />
+
       <div className="space-y-4">
-        <h3 className="text-xl font-bold">My Logged Tasks</h3>
-        {tasks.length === 0 ? (
-          <p className="text-muted-foreground">No tasks logged yet.</p>
+        <h3 className="text-xl font-bold">My Logged Tasks (Awaiting Approval)</h3>
+        {loggedTasks.length === 0 ? (
+          <p className="text-muted-foreground">No tasks awaiting approval.</p>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {tasks.map((task) => (
-              <Card key={task.id}>
+            {loggedTasks.map((task) => (
+              <Card key={task.id} className="relative group">
                 <CardContent className="pt-6">
+                  <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <EmployeeEditTaskDialog task={task} />
+                  </div>
+                  
                   <div className="flex justify-between items-start mb-2">
                     <span className="text-sm text-muted-foreground">
                       {new Date(task.log_date).toLocaleDateString()}
                     </span>
-                    <Badge
-                      variant={
-                        task.status === "APPROVED"
-                          ? "default"
-                          : task.status === "REJECTED"
-                            ? "destructive"
-                            : "secondary"
-                      }
-                    >
+                    <Badge variant="secondary">
                       {task.status}
                     </Badge>
                   </div>
-                  <p className="text-sm font-medium whitespace-pre-wrap mt-2">{task.description}</p>
-                  {task.manager_edit && (
-                    <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-md border border-blue-200 dark:border-blue-800">
-                      <p className="text-xs font-medium text-blue-700 dark:text-blue-400 mb-1">Manager&apos;s Edit:</p>
-                      <p className="text-sm whitespace-pre-wrap">{task.manager_edit}</p>
-                    </div>
-                  )}
+                  <p className="text-sm font-medium whitespace-pre-wrap mt-2 pr-8">{task.description}</p>
+                  
                   <div className="mt-4 pt-3 border-t text-sm text-muted-foreground">
                     {task.time_taken && <p><strong>Time:</strong> {task.time_taken}</p>}
                     {task.remark && <p><strong>Remark:</strong> {task.remark}</p>}

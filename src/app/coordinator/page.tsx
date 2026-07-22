@@ -148,7 +148,7 @@ function QueryTable({ queries }: { queries: Array<{
             <TableCell><Badge>{q.status.replace(/_/g, " ")}</Badge></TableCell>
             <TableCell>{new Date(q.created_at).toLocaleDateString()}</TableCell>
             <TableCell>
-              <Link href={`/coordinator/service-desk/${q.id}`}>
+              <Link href={`/coordinator/queries/${q.id}`}>
                 <Button variant="ghost" size="sm" className="cursor-pointer">
                   <Eye className="w-4 h-4 mr-1" /> View
                 </Button>

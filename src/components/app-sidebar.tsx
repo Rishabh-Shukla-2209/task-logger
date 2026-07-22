@@ -41,8 +41,8 @@ export function AppSidebar({ role }: { role: string }) {
       {
         label: "My Work",
         items: [
-          { title: "Log Tasks", url: "/employee", icon: PenTool },
-          { title: "My Assignments", url: "/employee/assignments", icon: ListTodo },
+          { title: "Dashboard", url: "/employee", icon: LayoutDashboard },
+          { title: "Task History", url: "/employee/history", icon: ClipboardList },
         ],
       },
     ]
@@ -108,10 +108,8 @@ export function AppSidebar({ role }: { role: string }) {
                 {group.items.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton render={<Link href={item.url} />} isActive={pathname === item.url || pathname.startsWith(item.url + "/")}>
-                      <Link href={item.url}>
-                        <item.icon className="mr-2" />
-                        <span>{item.title}</span>
-                      </Link>
+                      <item.icon className="mr-2" />
+                      <span>{item.title}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
@@ -124,11 +122,9 @@ export function AppSidebar({ role }: { role: string }) {
       <div className="mt-auto p-4 border-t">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton render={<Link href="/api/auth/signout" />}>
-              <Link href="/api/auth/signout" className="text-red-500 hover:text-red-600">
-                <LogOut className="mr-2" />
-                <span>Logout</span>
-              </Link>
+            <SidebarMenuButton render={<Link href="/api/auth/signout" className="text-red-500 hover:text-red-600" />}>
+              <LogOut className="mr-2" />
+              <span>Logout</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import { PartRequestStatus } from "@prisma/client"
 
 export async function createPartRequest(formData: FormData) {
   const session = await getServerSession(authOptions)
@@ -18,78 +19,63 @@ export async function createPartRequest(formData: FormData) {
     throw new Error("Missing fields")
   }
 
-  await prisma.partRequest.create({
+  const req = await prisma.partRequest.create({
     data: {
       part_name: partName,
       for_whom: forWhom,
       requested_by_id: session.user.id,
-      status: "PENDING",
+      status: "RECORDED",
     },
   })
 
-  revalidatePath("/coordinator/parts")
-}
-
-export async function updatePartPricing(requestId: string) {
-  const session = await getServerSession(authOptions)
-  if (!session || session.user.role !== "COORDINATOR") {
-    throw new Error("Unauthorized")
-  }
-
-  await prisma.partRequest.update({
-    where: { id: requestId },
+  await prisma.partRequestEvent.create({
     data: {
-      status: "PRICED",
-      pricing_received_at: new Date(),
+      part_request_id: req.id,
+      user_id: session.user.id,
+      action: `Created as RECORDED`,
     },
   })
 
   revalidatePath("/coordinator/parts")
 }
 
-export async function approvePartPurchase(requestId: string) {
+export async function transitionPartRequest(requestId: string, newStage: string, remark: string) {
   const session = await getServerSession(authOptions)
-  // Admin approves purchases (the "boss")
-  if (!session || session.user.role !== "ADMIN") {
-    throw new Error("Unauthorized (Boss only)")
-  }
+  if (!session || session.user.role !== "COORDINATOR") throw new Error("Unauthorized")
+
+  const req = await prisma.partRequest.findUnique({ where: { id: requestId } })
+  if (!req) throw new Error("Not found")
 
   await prisma.partRequest.update({
     where: { id: requestId },
+    data: { status: newStage as PartRequestStatus },
+  })
+
+  await prisma.partRequestEvent.create({
     data: {
-      status: "APPROVED",
-      approved_by_boss_at: new Date(),
+      part_request_id: requestId,
+      user_id: session.user.id,
+      action: `Transitioned from ${req.status} to ${newStage}`,
+      remark: remark || null,
     },
   })
 
-  revalidatePath("/coordinator/parts")
-  revalidatePath("/admin/parts")
-}
-
-export async function markPartOrdered(requestId: string) {
-  const session = await getServerSession(authOptions)
-  if (!session || session.user.role !== "COORDINATOR") {
-    throw new Error("Unauthorized")
-  }
-
-  await prisma.partRequest.update({
-    where: { id: requestId },
-    data: { status: "ORDERED" },
-  })
-
+  revalidatePath(`/coordinator/parts/${requestId}`)
   revalidatePath("/coordinator/parts")
 }
 
-export async function markPartReceived(requestId: string) {
+export async function addPartRequestRemark(requestId: string, remark: string) {
   const session = await getServerSession(authOptions)
-  if (!session || session.user.role !== "COORDINATOR") {
-    throw new Error("Unauthorized")
-  }
+  if (!session) throw new Error("Unauthorized")
 
-  await prisma.partRequest.update({
-    where: { id: requestId },
-    data: { status: "RECEIVED" },
+  await prisma.partRequestEvent.create({
+    data: {
+      part_request_id: requestId,
+      user_id: session.user.id,
+      action: `Added Note`,
+      remark: remark,
+    },
   })
 
-  revalidatePath("/coordinator/parts")
+  revalidatePath(`/coordinator/parts/${requestId}`)
 }

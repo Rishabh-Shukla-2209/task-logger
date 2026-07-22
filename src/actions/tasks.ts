@@ -33,6 +33,61 @@ export async function addTask(formData: FormData) {
   revalidatePath("/employee")
 }
 
+export async function editTaskByEmployee(taskId: string, formData: FormData) {
+  const session = await getServerSession(authOptions)
+  if (!session || session.user.role !== "EMPLOYEE") {
+    throw new Error("Unauthorized")
+  }
+
+  const description = formData.get("description") as string
+  const time_taken = formData.get("time_taken") as string | null
+  const remark = formData.get("remark") as string | null
+
+  if (!description) {
+    throw new Error("Missing description")
+  }
+
+  // Concurrency check
+  const task = await prisma.task.findUnique({ where: { id: taskId } })
+  if (!task || task.user_id !== session.user.id) {
+    throw new Error("Task not found or access denied")
+  }
+
+  if (task.status === "APPROVED") {
+    return { error: "Task already approved by manager" }
+  }
+
+  await prisma.task.update({
+    where: { id: taskId },
+    data: {
+      description,
+      time_taken: time_taken || null,
+      remark: remark || null,
+      status: "LOGGED" // Ensure status remains logged in case it was rejected
+    },
+  })
+
+  revalidatePath("/employee")
+  return { success: true }
+}
+
+export async function completeAssignedTask(assignmentId: string) {
+  const session = await getServerSession(authOptions)
+  if (!session || session.user.role !== "EMPLOYEE") {
+    throw new Error("Unauthorized")
+  }
+
+  await prisma.taskAssignment.update({
+    where: { 
+      id: assignmentId,
+      assigned_to_id: session.user.id
+    },
+    data: { status: "COMPLETED" },
+  })
+
+  revalidatePath("/employee")
+}
+
 export async function approveTask(taskId: string, approved: boolean) {
   const session = await getServerSession(authOptions)
   if (!session || session.user.role !== "MANAGER") {
@@ -94,6 +149,19 @@ export async function assignTaskToEmployee(formData: FormData) {
     },
   })
 
+  revalidatePath("/employee") // changed route
+}
+
+export async function approveAssignment(assignmentId: string, approved: boolean) {
+  const session = await getServerSession(authOptions)
+  if (!session || session.user.role !== "MANAGER") {
+    throw new Error("Unauthorized")
+  }
+
+  await prisma.taskAssignment.update({
+    where: { id: assignmentId },
+    data: { status: approved ? "APPROVED" : "PENDING" }, 
+  })
+
   revalidatePath("/manager")
-  revalidatePath("/employee/assignments")
 }

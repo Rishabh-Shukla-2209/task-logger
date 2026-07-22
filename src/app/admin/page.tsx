@@ -2,53 +2,33 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import prisma from "@/lib/prisma"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { GlobalProgressDashboard } from "@/components/shared/GlobalProgressDashboard"
+import { AdminEmployeeList } from "@/components/admin/AdminEmployeeList"
 
 export default async function AdminPage() {
   const session = await getServerSession(authOptions)
   if (!session || session.user.role !== "ADMIN") redirect("/")
 
-  const [
-    employeeCount,
-    loggedTasks,
-    approvedTasks,
-    activeQueries,
-    resolvedQueries,
-    pendingParts,
-  ] = await Promise.all([
-    prisma.user.count({ where: { role: "EMPLOYEE" } }),
-    prisma.task.count({ where: { status: "LOGGED" } }),
-    prisma.task.count({ where: { status: "APPROVED" } }),
-    prisma.serviceQuery.count({ where: { status: { not: "RESOLVED" } } }),
-    prisma.serviceQuery.count({ where: { status: "RESOLVED" } }),
-    prisma.partRequest.count({ where: { status: { in: ["PENDING", "PRICED"] } } }),
-  ])
-
-  const stats = [
-    { label: "Employees", value: employeeCount, color: "text-blue-600" },
-    { label: "Pending Logs", value: loggedTasks, color: "text-amber-600" },
-    { label: "Approved Logs", value: approvedTasks, color: "text-green-600" },
-    { label: "Active Queries", value: activeQueries, color: "text-purple-600" },
-    { label: "Resolved Queries", value: resolvedQueries, color: "text-emerald-600" },
-    { label: "Parts Awaiting", value: pendingParts, color: "text-orange-600" },
-  ]
+  const employees = await prisma.user.findMany({
+    where: { role: "EMPLOYEE" },
+    select: { id: true, username: true },
+    orderBy: { username: "asc" }
+  })
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto">
+    <div className="space-y-12 max-w-7xl mx-auto">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Admin Dashboard</h2>
-        <p className="text-muted-foreground">Read-only overview of all company operations.</p>
+        <p className="text-muted-foreground">Read-only overview of all company operations and employee logs.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
-        {stats.map((stat) => (
-          <Card key={stat.label}>
-            <CardContent className="pt-6 text-center">
-              <p className={`text-3xl font-bold ${stat.color}`}>{stat.value}</p>
-              <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="space-y-4">
+        <h3 className="text-xl font-bold">Global Progress</h3>
+        <GlobalProgressDashboard />
+      </div>
+
+      <div className="pt-8 border-t">
+        <AdminEmployeeList employees={employees} />
       </div>
     </div>
   )

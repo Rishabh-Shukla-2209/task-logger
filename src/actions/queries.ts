@@ -6,17 +6,6 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { QueryType, QueryStatus } from "@prisma/client"
 
-const STEP_ORDER: QueryStatus[] = [
-  "RECORDED",
-  "CONFIRMED",
-  "DISPATCHED",
-  "ASSIGNED",
-  "RECEIVED",
-  "QC_CHECKED",
-  "PACKED",
-  "RESOLVED",
-]
-
 export async function createServiceQuery(formData: FormData) {
   const session = await getServerSession(authOptions)
   if (!session || session.user.role !== "COORDINATOR") {
@@ -27,10 +16,13 @@ export async function createServiceQuery(formData: FormData) {
   const customerName = formData.get("customer_name") as string
   const deviceDetails = formData.get("device_details") as string | null
   const replacementReason = formData.get("replacement_reason") as string | null
-  const replacedWith = formData.get("replaced_with") as string | null
 
   if (!queryType || !customerName) {
     throw new Error("Missing required fields")
+  }
+
+  if ((queryType === "SALE_REPLACEMENT" || queryType === "RENT_REPLACEMENT") && !replacementReason) {
+    throw new Error("Replacement Reason is mandatory for replacements")
   }
 
   const query = await prisma.serviceQuery.create({
@@ -40,23 +32,21 @@ export async function createServiceQuery(formData: FormData) {
       customer_name: customerName,
       device_details: deviceDetails || null,
       replacement_reason: replacementReason || null,
-      replaced_with: replacedWith || null,
     },
   })
 
-  // Record the creation event
   await prisma.queryEvent.create({
     data: {
       query_id: query.id,
       user_id: session.user.id,
-      action: `Query created as RECORDED (${queryType})`,
+      action: `Created as RECORDED (${queryType})`,
     },
   })
 
-  revalidatePath("/coordinator")
+  revalidatePath("/coordinator/queries")
 }
 
-export async function advanceQueryStep(queryId: string) {
+export async function transitionServiceQuery(queryId: string, newStage: string, remark: string, extraData?: { assignedToId?: string, replacedWith?: string, confirmedById?: string }) {
   const session = await getServerSession(authOptions)
   if (!session || session.user.role !== "COORDINATOR") {
     throw new Error("Unauthorized")
@@ -65,84 +55,83 @@ export async function advanceQueryStep(queryId: string) {
   const query = await prisma.serviceQuery.findUnique({ where: { id: queryId } })
   if (!query) throw new Error("Query not found")
 
-  const currentIndex = STEP_ORDER.indexOf(query.status)
-  if (currentIndex === -1 || currentIndex >= STEP_ORDER.length - 1) {
-    throw new Error("Cannot advance further")
-  }
+  const updateData: any = { status: newStage as QueryStatus }
 
-  const nextStatus = STEP_ORDER[currentIndex + 1]
+  // Validation rules for specific stages
+  if (newStage === "CONFIRMED") {
+    const replacedWith = extraData?.replacedWith
+    const confirmedBy = extraData?.confirmedById
+    if (!replacedWith || !confirmedBy) throw new Error("Missing 'Replaced With' or 'Confirmed By' fields")
+    updateData.replaced_with = replacedWith
+    updateData.confirmed_by_id = confirmedBy
+  } else if (newStage === "ASSIGNED") {
+    const assignedTo = extraData?.assignedToId
+    if (!assignedTo) throw new Error("Missing 'Assigned To' field")
+    updateData.assigned_to_id = assignedTo
+  }
 
   await prisma.serviceQuery.update({
     where: { id: queryId },
-    data: { status: nextStatus },
+    data: updateData,
   })
+
+  let actionString = `Transitioned from ${query.status} to ${newStage}`
+
+  if (newStage === "ASSIGNED" && extraData?.assignedToId) {
+    const assignee = await prisma.user.findUnique({ where: { id: extraData.assignedToId } })
+    if (assignee) actionString += ` (Assigned to: ${assignee.username})`
+  } else if (newStage === "CONFIRMED" && extraData?.confirmedById) {
+    const confirmer = await prisma.user.findUnique({ where: { id: extraData.confirmedById } })
+    if (confirmer) actionString += ` (Confirmed by: ${confirmer.username})`
+  }
 
   await prisma.queryEvent.create({
     data: {
       query_id: queryId,
       user_id: session.user.id,
-      action: `${query.status} → ${nextStatus}`,
+      action: actionString,
+      remark: remark || null,
     },
   })
 
-  revalidatePath(`/coordinator/service-desk/${queryId}`)
-  revalidatePath("/coordinator")
+  revalidatePath(`/coordinator/queries/${queryId}`)
+  revalidatePath("/coordinator/queries")
 }
 
-export async function reopenQuery(queryId: string) {
+export async function addServiceQueryRemark(queryId: string, remark: string) {
   const session = await getServerSession(authOptions)
-  if (!session || session.user.role !== "COORDINATOR") {
-    throw new Error("Unauthorized")
-  }
-
-  const query = await prisma.serviceQuery.findUnique({ where: { id: queryId } })
-  if (!query || query.status !== "RESOLVED") {
-    throw new Error("Only resolved queries can be reopened")
-  }
-
-  await prisma.serviceQuery.update({
-    where: { id: queryId },
-    data: { status: "RECEIVED" },
-  })
+  if (!session) throw new Error("Unauthorized")
 
   await prisma.queryEvent.create({
     data: {
       query_id: queryId,
       user_id: session.user.id,
-      action: "RESOLVED → RECEIVED (Reopened)",
+      action: `Added Note`,
+      remark: remark,
     },
   })
 
-  revalidatePath(`/coordinator/service-desk/${queryId}`)
-  revalidatePath("/coordinator")
+  revalidatePath(`/coordinator/queries/${queryId}`)
 }
 
-export async function updateReplacementDetails(queryId: string, formData: FormData) {
+export async function reopenServiceQuery(queryId: string, remark: string) {
   const session = await getServerSession(authOptions)
-  if (!session || session.user.role !== "COORDINATOR") {
-    throw new Error("Unauthorized")
-  }
-
-  const reason = formData.get("replacement_reason") as string
-  const replacedWith = formData.get("replaced_with") as string
-  const approvedById = formData.get("replacement_approved_by_id") as string
+  if (!session || session.user.role !== "COORDINATOR") throw new Error("Unauthorized")
 
   await prisma.serviceQuery.update({
     where: { id: queryId },
-    data: {
-      replacement_reason: reason,
-      replaced_with: replacedWith,
-      replacement_approved_by_id: approvedById || null,
-    },
+    data: { status: "CONFIRMED" },
   })
 
   await prisma.queryEvent.create({
     data: {
       query_id: queryId,
       user_id: session.user.id,
-      action: `Replacement details updated: reason="${reason}", replaced with="${replacedWith}"`,
+      action: `REOPENED (Reverted to CONFIRMED)`,
+      remark: remark,
     },
   })
 
-  revalidatePath(`/coordinator/service-desk/${queryId}`)
+  revalidatePath(`/coordinator/queries/${queryId}`)
+  revalidatePath("/coordinator/queries")
 }

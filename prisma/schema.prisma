@@ -21,6 +21,12 @@ enum TaskStatus {
   REJECTED
 }
 
+enum TaskAssignmentStatus {
+  PENDING
+  COMPLETED
+  APPROVED
+}
+
 enum QueryType {
   NEW_SALE
   RENT
@@ -34,36 +40,43 @@ enum QueryType {
 enum QueryStatus {
   RECORDED
   CONFIRMED
-  DISPATCHED
+  MATERIAL_OUT
   ASSIGNED
-  RECEIVED
   QC_CHECKED
-  PACKED
+  CLEANED
+  CROSS_CHECKED
   RESOLVED
 }
 
 enum QuotationStatus {
+  RECORDED
+  APPROVED_TO_PROCEED
+  VISIT
+  PRICE_RECEIVED
   DRAFT
+  FINAL_APPROVAL
   SENT
-  ACCEPTED
-  REJECTED
 }
 
 enum WarrantyStatus {
-  RECORDED
-  PROCESSING
-  COMPLETED
+  ADDED
+  WARRANTY_CLAIMED
 }
 
 enum InternalRepairStatus {
-  SENT_OUT
+  RECORDED
+  CONFIRMED
+  SENT_FOR_REPAIR
   RECEIVED_BACK
+  QC_CHECKED
+  READY
+  SCRAPPED
 }
 
 enum PartRequestStatus {
-  PENDING
-  PRICED
-  APPROVED
+  RECORDED
+  PRICING_RECEIVED
+  APPROVED_BY_BOSS
   ORDERED
   RECEIVED
 }
@@ -83,9 +96,16 @@ model User {
   TaskAssignmentsBy  TaskAssignment[]   @relation("AssignedBy")
   TaskAssignmentsTo  TaskAssignment[]   @relation("AssignedTo")
   EditedTasks        Task[]             @relation("EditedBy")
-  QueryEvents        QueryEvent[]
+  
+  QueryEvents          QueryEvent[]
+  QuotationEvents      QuotationEvent[]
+  InternalRepairEvents InternalRepairEvent[]
+  PartRequestEvents    PartRequestEvent[]
+  
   PartRequests       PartRequest[]      @relation("PartRequester")
   ReplacementApprovals ServiceQuery[]   @relation("ReplacementApprover")
+  QueryConfirmedBy   ServiceQuery[]     @relation("QueryConfirmer")
+  QueryAssignedTo    ServiceQuery[]     @relation("QueryAssignee")
 }
 
 // ─── MODULE A: WORK LOGGING ─────────────────────────────
@@ -111,14 +131,16 @@ model Task {
 }
 
 model TaskAssignment {
-  id              String    @id @default(uuid())
+  id              String               @id @default(uuid())
   assigned_by_id  String
-  assigned_by     User      @relation("AssignedBy", fields: [assigned_by_id], references: [id])
+  assigned_by     User                 @relation("AssignedBy", fields: [assigned_by_id], references: [id])
   assigned_to_id  String
-  assigned_to     User      @relation("AssignedTo", fields: [assigned_to_id], references: [id])
+  assigned_to     User                 @relation("AssignedTo", fields: [assigned_to_id], references: [id])
   description     String
-  due_date        DateTime? @db.Date
-  created_at      DateTime  @default(now())
+  due_date        DateTime?            @db.Date
+  status          TaskAssignmentStatus @default(PENDING)
+  created_at      DateTime             @default(now())
+  updated_at      DateTime             @updatedAt
 }
 
 // ─── MODULE B: SERVICE DESK ─────────────────────────────
@@ -130,11 +152,18 @@ model ServiceQuery {
   customer_name            String
   device_details           String?
 
-  // Replacement audit (for SALE_REPLACEMENT / RENT_REPLACEMENT)
+  // Validation / Rules fields
   replacement_reason       String?
   replaced_with            String?
+  
   replacement_approved_by_id String?
   replacement_approved_by  User?         @relation("ReplacementApprover", fields: [replacement_approved_by_id], references: [id])
+
+  confirmed_by_id          String?
+  confirmed_by             User?         @relation("QueryConfirmer", fields: [confirmed_by_id], references: [id])
+
+  assigned_to_id           String?
+  assigned_to              User?         @relation("QueryAssignee", fields: [assigned_to_id], references: [id])
 
   created_at               DateTime      @default(now())
   updated_at               DateTime      @updatedAt
@@ -148,19 +177,32 @@ model QueryEvent {
   user_id        String
   user           User          @relation(fields: [user_id], references: [id])
   action         String        // e.g. "RECORDED → CONFIRMED"
+  remark         String?
   created_at     DateTime      @default(now())
 }
 
 // ─── COORDINATOR MODULES ────────────────────────────────
 
 model Quotation {
-  id             String           @id @default(uuid())
-  customer_name  String
-  description    String
-  amount         String?
-  status         QuotationStatus  @default(DRAFT)
-  created_at     DateTime         @default(now())
-  updated_at     DateTime         @updatedAt
+  id               String            @id @default(uuid())
+  customer_name    String
+  description      String
+  amount           String?
+  status           QuotationStatus   @default(RECORDED)
+  created_at       DateTime          @default(now())
+  updated_at       DateTime          @updatedAt
+  QuotationEvents  QuotationEvent[]
+}
+
+model QuotationEvent {
+  id             String        @id @default(uuid())
+  quotation_id   String
+  quotation      Quotation     @relation(fields: [quotation_id], references: [id], onDelete: Cascade)
+  user_id        String
+  user           User          @relation(fields: [user_id], references: [id])
+  action         String
+  remark         String?
+  created_at     DateTime      @default(now())
 }
 
 model WarrantyExchange {
@@ -169,21 +211,34 @@ model WarrantyExchange {
   device_details   String
   reason           String
   exchange_with    String?
-  status           WarrantyStatus  @default(RECORDED)
+  status           WarrantyStatus  @default(ADDED)
   created_at       DateTime        @default(now())
   updated_at       DateTime        @updatedAt
 }
 
 model InternalRepair {
-  id                String                @id @default(uuid())
-  item_description  String
-  sent_to           String
-  sent_date         DateTime              @db.Date
-  received_date     DateTime?             @db.Date
-  status            InternalRepairStatus  @default(SENT_OUT)
-  notes             String?
-  created_at        DateTime              @default(now())
-  updated_at        DateTime              @updatedAt
+  id                   String                @id @default(uuid())
+  item_description     String
+  vendor_shop          String?
+  sent_to              String
+  sent_date            DateTime              @db.Date
+  received_date        DateTime?             @db.Date
+  status               InternalRepairStatus  @default(RECORDED)
+  notes                String?
+  created_at           DateTime              @default(now())
+  updated_at           DateTime              @updatedAt
+  InternalRepairEvents InternalRepairEvent[]
+}
+
+model InternalRepairEvent {
+  id                 String          @id @default(uuid())
+  internal_repair_id String
+  internal_repair    InternalRepair  @relation(fields: [internal_repair_id], references: [id], onDelete: Cascade)
+  user_id            String
+  user               User            @relation(fields: [user_id], references: [id])
+  action             String
+  remark             String?
+  created_at         DateTime        @default(now())
 }
 
 model PartRequest {
@@ -194,7 +249,19 @@ model PartRequest {
   requested_by           User               @relation("PartRequester", fields: [requested_by_id], references: [id])
   pricing_received_at    DateTime?
   approved_by_boss_at    DateTime?
-  status                 PartRequestStatus  @default(PENDING)
+  status                 PartRequestStatus  @default(RECORDED)
   created_at             DateTime           @default(now())
   updated_at             DateTime           @updatedAt
+  PartRequestEvents      PartRequestEvent[]
+}
+
+model PartRequestEvent {
+  id                 String          @id @default(uuid())
+  part_request_id    String
+  part_request       PartRequest     @relation(fields: [part_request_id], references: [id], onDelete: Cascade)
+  user_id            String
+  user               User            @relation(fields: [user_id], references: [id])
+  action             String
+  remark             String?
+  created_at         DateTime        @default(now())
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { approveTask, editTaskByManager } from "@/actions/tasks"
+import { approveTask, approveAssignment, editTaskByManager } from "@/actions/tasks"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -9,12 +9,12 @@ import { Textarea } from "@/components/ui/textarea"
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Edit, Check, X, Loader2 } from "lucide-react"
-import { useTransition } from "react";
+import { Edit, Check, X, Loader2, User, History } from "lucide-react"
+import { TaskHistoryBrowser } from "@/components/shared/TaskHistoryBrowser"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface SerializedTask {
   id: string
@@ -24,14 +24,57 @@ interface SerializedTask {
   status: string
   manager_edit: string | null
   log_date: string
-  created_at: string
-  username: string
 }
 
-export function ManagerDashboard({ tasks }: { tasks: SerializedTask[] }) {
+interface SerializedAssignment {
+  id: string
+  description: string
+  status: string
+  due_date: string | null
+}
+
+interface EmployeeWithTasks {
+  id: string
+  username: string
+  loggedTasks: SerializedTask[]
+  completedAssignments: SerializedAssignment[]
+}
+
+export function ManagerDashboard({ employees }: { employees: EmployeeWithTasks[] }) {
+  const [selectedEmployee, setSelectedEmployee] = useState<EmployeeWithTasks | null>(null)
+  
   const [editingTask, setEditingTask] = useState<SerializedTask | null>(null)
+  const [loadingId, setLoadingId] = useState<string | null>(null)
   const [editLoading, setEditLoading] = useState(false)
-  const [isPending, startTransition] = useTransition();
+
+  const handleApprove = async (id: string, approved: boolean, isAssignment = false) => {
+    setLoadingId(id)
+    try {
+      if (isAssignment) {
+        await approveAssignment(id, approved)
+      } else {
+        await approveTask(id, approved)
+      }
+      
+      // Update local state for immediate feedback
+      setSelectedEmployee(prev => {
+        if (!prev) return prev
+        if (isAssignment) {
+          return {
+            ...prev,
+            completedAssignments: prev.completedAssignments.filter(a => a.id !== id)
+          }
+        } else {
+          return {
+            ...prev,
+            loggedTasks: prev.loggedTasks.filter(t => t.id !== id)
+          }
+        }
+      })
+    } finally {
+      setLoadingId(null)
+    }
+  }
 
   const handleEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -40,136 +83,241 @@ export function ManagerDashboard({ tasks }: { tasks: SerializedTask[] }) {
     const formData = new FormData(e.currentTarget)
     try {
       await editTaskByManager(editingTask.id, formData)
+      
+      // local update
+      const editValue = formData.get("manager_edit") as string
+      setSelectedEmployee(prev => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          loggedTasks: prev.loggedTasks.map(t => t.id === editingTask.id ? { ...t, manager_edit: editValue } : t)
+        }
+      })
       setEditingTask(null)
     } finally {
       setEditLoading(false)
     }
   }
 
-  return (
-    <>
-      <div className="grid gap-4">
-        {tasks.map((task) => (
-          <Card key={task.id}>
-            <CardHeader className="pb-2">
-              <div className="flex justify-between items-center">
-                <CardTitle className="text-lg">{task.username}</CardTitle>
-                <div className="flex items-center gap-2">
-                  <Badge variant={
-                    task.status === "APPROVED" ? "default" :
-                      task.status === "REJECTED" ? "destructive" : "secondary"
-                  }>
-                    {task.status}
-                  </Badge>
-                  <span className="text-sm text-muted-foreground">
-                    {new Date(task.log_date).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="whitespace-pre-wrap mb-3 bg-muted p-4 rounded-md text-sm">{task.description}</p>
+  if (selectedEmployee) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between bg-card p-4 rounded-lg border shadow-sm">
+          <div className="flex items-center gap-4">
+            <Button variant="outline" size="sm" onClick={() => setSelectedEmployee(null)}>
+              ← Back to List
+            </Button>
+            <h3 className="text-xl font-bold flex items-center gap-2">
+              <User className="h-5 w-5 text-indigo-500" />
+              {selectedEmployee.username}&apos;s Profile
+            </h3>
+          </div>
+        </div>
 
-              {task.manager_edit && (
-                <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-md border border-blue-200 dark:border-blue-800">
-                  <p className="text-xs font-medium text-blue-700 dark:text-blue-400 mb-1">Manager&apos;s Edit:</p>
-                  <p className="text-sm whitespace-pre-wrap">{task.manager_edit}</p>
+        <Tabs defaultValue="pending" className="w-full">
+          <TabsList className="grid w-full md:w-auto grid-cols-2 md:grid-cols-2 lg:inline-flex">
+            <TabsTrigger value="pending">Pending Approvals</TabsTrigger>
+            <TabsTrigger value="history" className="flex items-center gap-2">
+              <History className="h-4 w-4" /> History
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="pending" className="mt-6 space-y-8">
+            <div className="space-y-4">
+              <h4 className="text-lg font-semibold">Logged Tasks ({selectedEmployee.loggedTasks.length})</h4>
+              {selectedEmployee.loggedTasks.length === 0 ? (
+                <p className="text-muted-foreground">No tasks awaiting approval.</p>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {selectedEmployee.loggedTasks.map(task => (
+                    <Card key={task.id} className="relative group flex flex-col h-full">
+                      <CardHeader className="pb-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-muted-foreground">{new Date(task.log_date).toLocaleDateString()}</span>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-100"
+                              onClick={() => handleApprove(task.id, true)}
+                              disabled={loadingId === task.id}
+                            >
+                              {loadingId === task.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-red-600 hover:text-red-700 hover:bg-red-100"
+                              onClick={() => handleApprove(task.id, false)}
+                              disabled={loadingId === task.id}
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="flex-1 flex flex-col">
+                        <p className="text-sm font-medium whitespace-pre-wrap">{task.description}</p>
+                        
+                        {task.manager_edit && (
+                          <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-md border border-blue-200 dark:border-blue-800">
+                            <p className="text-xs font-medium text-blue-700 dark:text-blue-400 mb-1">Your Edit:</p>
+                            <p className="text-sm whitespace-pre-wrap">{task.manager_edit}</p>
+                          </div>
+                        )}
+                        
+                        <div className="mt-auto pt-4 flex justify-between items-end">
+                          <div className="text-xs text-muted-foreground space-y-1">
+                            {task.time_taken && <div><strong>Time:</strong> {task.time_taken}</div>}
+                            {task.remark && <div><strong>Remark:</strong> {task.remark}</div>}
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => setEditingTask(task)}
+                          >
+                            <Edit className="w-3 h-3 mr-1" /> Edit
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               )}
+            </div>
 
-              <div className="text-sm text-muted-foreground mb-4">
-                {task.time_taken && <p><strong>Time:</strong> {task.time_taken}</p>}
-                {task.remark && <p><strong>Remark:</strong> {task.remark}</p>}
-              </div>
-
-              {task.status === "LOGGED" && (
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="default"
-                    size="sm"
-                    className="cursor-pointer"
-                    disabled={isPending}
-                    onClick={() =>
-                      startTransition(async () => {
-                        await approveTask(task.id, true);
-                      })
-                    }
-                  >
-                    <Check className="w-4 h-4 mr-1" /> Approve
-                  </Button>
-
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    className="cursor-pointer"
-                    disabled={isPending}
-                    onClick={() =>
-                      startTransition(async () => {
-                        await approveTask(task.id, false);
-                      })
-                    }
-                  >
-                    <X className="w-4 h-4 mr-1" /> Reject
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="cursor-pointer"
-                    onClick={() => setEditingTask(task)}
-                  >
-                    <Edit className="w-4 h-4 mr-1" /> Edit
-                  </Button>
+            <div className="space-y-4 pt-4 border-t">
+              <h4 className="text-lg font-semibold">Completed Assignments ({selectedEmployee.completedAssignments.length})</h4>
+              {selectedEmployee.completedAssignments.length === 0 ? (
+                <p className="text-muted-foreground">No assignments awaiting approval.</p>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {selectedEmployee.completedAssignments.map(assignment => (
+                    <Card key={assignment.id} className="border-indigo-200 bg-indigo-50/30">
+                      <CardContent className="pt-6">
+                        <div className="flex justify-between items-start mb-2">
+                          <Badge variant="outline" className="border-indigo-300 text-indigo-700">COMPLETED</Badge>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-100"
+                              onClick={() => handleApprove(assignment.id, true, true)}
+                              disabled={loadingId === assignment.id}
+                            >
+                              {loadingId === assignment.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-amber-600 hover:text-amber-700 hover:bg-amber-100"
+                              title="Reject (Return to Pending)"
+                              onClick={() => handleApprove(assignment.id, false, true)}
+                              disabled={loadingId === assignment.id}
+                            >
+                              <RotateCcw className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <p className="text-sm font-medium whitespace-pre-wrap">{assignment.description}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
-        ))}
-        {tasks.length === 0 && (
-          <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
-              No tasks to review.
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          </TabsContent>
+          <TabsContent value="history" className="mt-6">
+            <TaskHistoryBrowser userId={selectedEmployee.id} />
+          </TabsContent>
+        </Tabs>
+
+        {/* Edit Dialog */}
+        <Dialog open={!!editingTask} onOpenChange={(open) => !open && setEditingTask(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add / Edit Manager Note</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Original Description (Read-Only)</label>
+                <div className="p-3 bg-muted rounded-md text-sm whitespace-pre-wrap">
+                  {editingTask?.description}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Your Edited Version</label>
+                <Textarea
+                  name="manager_edit"
+                  defaultValue={editingTask?.manager_edit || editingTask?.description}
+                  rows={5}
+                  required
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={editLoading}>
+                {editLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                Save Edit
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
+    )
+  }
 
-      {/* Edit Dialog */}
-      <Dialog open={!!editingTask} onOpenChange={(open) => { if (!open) setEditingTask(null) }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Task</DialogTitle>
-            <DialogDescription>
-              The employee&apos;s original is preserved. Your edit is saved separately.
-            </DialogDescription>
-          </DialogHeader>
-          {editingTask && (
-            <>
-              <div className="p-3 bg-muted rounded-md">
-                <p className="text-xs font-medium text-muted-foreground mb-1">Original (read-only):</p>
-                <p className="text-sm whitespace-pre-wrap">{editingTask.description}</p>
-              </div>
-              <form onSubmit={handleEditSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Manager&apos;s Edit</label>
-                  <Textarea
-                    name="manager_edit"
-                    defaultValue={editingTask.manager_edit || editingTask.description}
-                    required
-                    rows={5}
-                  />
+  return (
+    <div className="space-y-4">
+      <h3 className="text-xl font-bold">Employees ({employees.length})</h3>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {employees.map(emp => {
+          const pendingCount = emp.loggedTasks.length + emp.completedAssignments.length
+          return (
+            <Card 
+              key={emp.id} 
+              className="cursor-pointer hover:shadow-md transition-all hover:border-indigo-300"
+              onClick={() => setSelectedEmployee(emp)}
+            >
+              <CardContent className="pt-6 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
+                    {emp.username.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-lg">{emp.username}</h4>
+                    <p className="text-sm text-muted-foreground">Employee</p>
+                  </div>
                 </div>
-                <Button type="submit" className="w-full cursor-pointer" disabled={editLoading}>
-                  {editLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  Save Edit
-                </Button>
-              </form>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-    </>
+                {pendingCount > 0 && (
+                  <Badge variant="default" className="bg-red-500 hover:bg-red-600">
+                    {pendingCount} Pending
+                  </Badge>
+                )}
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function RotateCcw(props: any) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+    </svg>
   )
 }
