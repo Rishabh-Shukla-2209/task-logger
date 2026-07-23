@@ -9,11 +9,11 @@ import { Badge } from "@/components/ui/badge"
 const STEP_LABELS: Record<string, string> = {
   RECORDED: "Recorded",
   CONFIRMED: "Confirmed",
-  DISPATCHED: "Dispatched",
+  MATERIAL_OUT: "Material Out",
   ASSIGNED: "Assigned",
-  RECEIVED: "Received",
   QC_CHECKED: "QC Checked",
-  PACKED: "Packed",
+  CLEANED: "Cleaned",
+  CROSS_CHECKED: "Cross Checked",
   RESOLVED: "Resolved",
 }
 
@@ -29,6 +29,7 @@ export default async function AdminQueriesPage() {
         orderBy: { created_at: "asc" },
       },
       replacement_approved_by: true,
+      customer: true,
     },
   })
 
@@ -45,7 +46,7 @@ export default async function AdminQueriesPage() {
             <CardHeader className="bg-muted/50 border-b pb-4">
               <div className="flex justify-between items-center">
                 <div>
-                  <CardTitle className="text-xl">{query.customer_name}</CardTitle>
+                  <CardTitle className="text-xl">{query.customer?.name}</CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">
                     {query.device_details || "No device details"} | {new Date(query.created_at).toLocaleDateString()}
                   </p>

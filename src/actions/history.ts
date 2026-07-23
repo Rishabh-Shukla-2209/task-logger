@@ -73,5 +73,5 @@ export async function fetchTaskHistory({
     tasks: grouped[date]
   }))
 
-  return { data: groupedArray, hasMore: true } // In a real app we'd check if more exist
+  return { data: groupedArray, hasMore: groupedArray.length > 0 } // In a real app we'd check if more exist
 }

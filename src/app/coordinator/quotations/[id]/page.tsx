@@ -15,7 +15,8 @@ const QUOTATION_STAGES = [
   "PRICE_RECEIVED",
   "DRAFT",
   "FINAL_APPROVAL",
-  "SENT"
+  "SENT",
+  "DROPPED"
 ]
 
 export default async function QuotationDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -32,6 +33,7 @@ export default async function QuotationDetailsPage({ params }: { params: Promise
         include: { user: { select: { username: true } } },
         orderBy: { created_at: "asc" }
       },
+      customer: true,
     }
   })
 
@@ -45,7 +47,7 @@ export default async function QuotationDetailsPage({ params }: { params: Promise
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Quotations
           </Button>
         </Link>
-        <h2 className="text-3xl font-bold tracking-tight">Quotation: {quotation.customer_name}</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Quotation: {quotation.customer?.name}</h2>
       </div>
 
       <div className="bg-card p-6 rounded-lg border shadow-sm grid md:grid-cols-2 gap-4">
@@ -63,8 +65,7 @@ export default async function QuotationDetailsPage({ params }: { params: Promise
         currentStage={quotation.status}
         stages={QUOTATION_STAGES}
         events={quotation.QuotationEvents}
-        isFinal={quotation.status === "SENT"}
-        reopenStage="RECORDED"
+        isFinal={quotation.status === "SENT" || quotation.status === "DROPPED"}
         readOnly={isReadOnly}
         onTransition={async (newStage, remark) => {
           "use server"

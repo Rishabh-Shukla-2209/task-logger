@@ -14,9 +14,10 @@ import { Badge } from "@/components/ui/badge"
 interface Task {
   id: string
   description: string
-  time_taken: string | null
+  time_taken_minutes: number | null
   status: string
   remark: string | null
+  manager_edit: string | null
   log_date: Date
 }
 
@@ -152,8 +153,8 @@ export function TaskHistoryBrowser({ userId = "self" }: { userId?: string }) {
                   <CardContent className="p-0">
                     <div className="flex flex-col sm:flex-row">
                       <div className="p-4 sm:border-r sm:w-1/4 bg-muted/20">
-                        <div className="text-sm font-medium text-muted-foreground mb-1">Time Taken</div>
-                        <div className="font-semibold">{task.time_taken || "N/A"}</div>
+                        <div className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Time Taken</div>
+                        <div className="font-semibold">{task.time_taken_minutes ? `${task.time_taken_minutes} mins` : "N/A"}</div>
                         <div className="mt-3">
                           <Badge variant="outline" className={getStatusColor(task.status)}>
                             {task.status}
@@ -165,8 +166,13 @@ export function TaskHistoryBrowser({ userId = "self" }: { userId?: string }) {
                           <p className="whitespace-pre-wrap">{task.description}</p>
                         </div>
                         {task.remark && (
-                          <div className="mt-4 p-3 bg-red-50 text-red-900 text-sm rounded-md border border-red-100">
-                            <strong>Manager Remark:</strong> {task.remark}
+                          <div className="mt-4 p-3 bg-muted text-sm rounded-md border">
+                            <strong>Remark:</strong> {task.remark}
+                          </div>
+                        )}
+                        {task.manager_edit && (
+                          <div className="mt-4 p-3 bg-blue-50 text-blue-900 text-sm rounded-md border border-blue-100">
+                            <strong>Manager Note:</strong> {task.manager_edit}
                           </div>
                         )}
                       </div>

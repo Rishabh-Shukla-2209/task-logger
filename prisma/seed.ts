@@ -1,10 +1,11 @@
 import 'dotenv/config';
 import prisma from '../src/lib/prisma';
-import { Role, TaskStatus, TaskAssignmentStatus, QueryType, QueryStatus, QuotationStatus, WarrantyStatus, InternalRepairStatus, PartRequestStatus } from '@prisma/client';
+import { Role, TaskStatus, TaskAssignmentStatus, QueryType, QueryStatus, QuotationStatus, WarrantyStatus, InternalRepairStatus, PartRequestStatus, SupplierType } from '@prisma/client';
 
 async function main() {
   console.log('Cleaning existing data...');
   // Clean tables in reverse dependency order
+  await prisma.warrantyExchangeEvent.deleteMany();
   await prisma.queryEvent.deleteMany();
   await prisma.quotationEvent.deleteMany();
   await prisma.internalRepairEvent.deleteMany();
@@ -17,6 +18,8 @@ async function main() {
   await prisma.partRequest.deleteMany();
   await prisma.taskAssignment.deleteMany();
   await prisma.task.deleteMany();
+  await prisma.customer.deleteMany();
+  await prisma.supplier.deleteMany();
   await prisma.user.deleteMany();
 
   console.log('Seeding Users...');
@@ -105,6 +108,21 @@ async function main() {
 
   console.log('Users created successfully.');
 
+  console.log('Seeding Customers and Suppliers...');
+  const customer1 = await prisma.customer.create({ data: { name: 'Infosys BPO (Electronic City)', address: 'Bangalore' } });
+  const customer2 = await prisma.customer.create({ data: { name: 'Zomato HQ Gurgaon', address: 'Gurgaon' } });
+  const customer3 = await prisma.customer.create({ data: { name: 'Apollo Hospitals South Delhi', address: 'New Delhi' } });
+  const customer4 = await prisma.customer.create({ data: { name: 'Sharma & Sons Logistics (Okhla)', address: 'Okhla' } });
+  const customer5 = await prisma.customer.create({ data: { name: 'Mahindra Logistics (Bhiwandi Hub)', address: 'Bhiwandi' } });
+  const customer6 = await prisma.customer.create({ data: { name: 'HDFC Bank (Connaught Place Branch)', address: 'CP, Delhi' } });
+
+  const supplier1 = await prisma.supplier.create({ data: { name: 'Shree Ram Chip Level Repairs', type: SupplierType.REPAIR_VENDOR, address: 'Nehru Place Micro Repair Hub' } });
+  const supplier2 = await prisma.supplier.create({ data: { name: 'iFixit Component Level Lab', type: SupplierType.REPAIR_VENDOR, address: 'Lamington Road Tech Labs (Mumbai Branch)' } });
+  const supplier3 = await prisma.supplier.create({ data: { name: 'Logitech Authorized Center', type: SupplierType.BOTH } });
+  const supplier4 = await prisma.supplier.create({ data: { name: 'Zebra Service Point', type: SupplierType.REPAIR_VENDOR } });
+  const supplier5 = await prisma.supplier.create({ data: { name: 'Prime ABGB', type: SupplierType.PARTS_SUPPLIER } });
+
+
   const daysAgo = (days: number) => {
     const date = new Date();
     date.setDate(date.getDate() - days);
@@ -120,7 +138,7 @@ async function main() {
         user_id: emp1.id,
         log_date: daysAgo(0),
         description: 'Replaced SMPS and tested 450W power supply unit at Reliance Digital Connaught Place site.',
-        time_taken: '2.5 hrs',
+        time_taken_minutes: 150,
         remark: 'Client signed job sheet CP-9082. All desktop units powered up fine.',
         status: TaskStatus.LOGGED,
       },
@@ -128,7 +146,7 @@ async function main() {
         user_id: emp1.id,
         log_date: daysAgo(1),
         description: 'Configured Mikrotik Router RB750Gr3 with VLAN separation for Gurgaon branch office.',
-        time_taken: '3.5 hrs',
+        time_taken_minutes: 210,
         remark: 'Bandwidth caps applied per department as instructed by IT Manager.',
         status: TaskStatus.LOGGED,
       },
@@ -136,7 +154,7 @@ async function main() {
         user_id: emp1.id,
         log_date: daysAgo(2),
         description: 'Serviced HP LaserJet Pro M404dn printer at Apollo Hospitals Okhla campus.',
-        time_taken: '1.5 hrs',
+        time_taken_minutes: 90,
         remark: 'Paper jam issue resolved. Pickup rollers cleaned.',
         status: TaskStatus.APPROVED,
         manager_edit: 'Approved. Good turnaround time for critical hospital printer.',
@@ -147,7 +165,7 @@ async function main() {
         user_id: emp1.id,
         log_date: daysAgo(3),
         description: 'Site survey for 16-channel Hikvision CCTV installation at Zomato Warehouse Greater Noida.',
-        time_taken: '5.0 hrs',
+        time_taken_minutes: 300,
         remark: 'Cable route map prepared. Recommended Cat6 outdoor shielded cable.',
         status: TaskStatus.APPROVED,
       },
@@ -155,7 +173,7 @@ async function main() {
         user_id: emp1.id,
         log_date: daysAgo(5),
         description: 'Attended network downtime call at Tata Consultancy Services Cyber City floor 4.',
-        time_taken: '4.0 hrs',
+        time_taken_minutes: 240,
         remark: 'Faulty D-Link 24-port switch swapped with standby unit.',
         status: TaskStatus.APPROVED,
       },
@@ -168,7 +186,7 @@ async function main() {
         user_id: emp2.id,
         log_date: daysAgo(0),
         description: 'Installed Tally Prime Multi-User on Windows Server 2022 for MG Road Trading Co.',
-        time_taken: '3.0 hrs',
+        time_taken_minutes: 180,
         remark: 'Database restored from backup and user permissions configured.',
         status: TaskStatus.LOGGED,
       },
@@ -176,7 +194,7 @@ async function main() {
         user_id: emp2.id,
         log_date: daysAgo(1),
         description: 'L2 troubleshooting on Windows 11 Blue Screen (BSOD) crashes at Paytm Noida Sec-62 office.',
-        time_taken: '2.0 hrs',
+        time_taken_minutes: 120,
         remark: 'Corrupted Realtek Wi-Fi driver reinstalled. System pass diagnostic test.',
         status: TaskStatus.LOGGED,
       },
@@ -184,7 +202,7 @@ async function main() {
         user_id: emp2.id,
         log_date: daysAgo(3),
         description: 'RAM upgrade (8GB to 16GB Corsair DDR4) across 8 workstations at Blue Dart Aerocity HQ.',
-        time_taken: '4.5 hrs',
+        time_taken_minutes: 270,
         remark: 'Dual-channel memory verification completed on all PCs.',
         status: TaskStatus.APPROVED,
         manager_edit: 'Verified against inventory allocation. Clean job.',
@@ -195,7 +213,7 @@ async function main() {
         user_id: emp2.id,
         log_date: daysAgo(4),
         description: 'Biometric Attendance Machine (ZKTeco K40) setup and IP sync at Swiggy Kitchen Indiranagar.',
-        time_taken: '2.5 hrs',
+        time_taken_minutes: 150,
         remark: 'Staff biometric enrollment trained to shift in-charge.',
         status: TaskStatus.APPROVED,
       },
@@ -208,7 +226,7 @@ async function main() {
         user_id: emp3.id,
         log_date: daysAgo(0),
         description: 'Disassembled 5 Lenovo ThinkCentre PCs for motherboard capacitor replacement in Nehru Place lab.',
-        time_taken: '4.0 hrs',
+        time_taken_minutes: 240,
         remark: 'Sent 3 boards to vendor micro-repair specialist.',
         status: TaskStatus.LOGGED,
       },
@@ -216,7 +234,7 @@ async function main() {
         user_id: emp3.id,
         log_date: daysAgo(2),
         description: 'Thermal pasting and fan cleaning for 10 Dell Latitude laptops from Swiggy Tech Hub fleet.',
-        time_taken: '6.0 hrs',
+        time_taken_minutes: 360,
         remark: 'Average CPU stress temp dropped from 92°C to 68°C.',
         status: TaskStatus.APPROVED,
       },
@@ -255,7 +273,7 @@ async function main() {
     data: {
       query_type: QueryType.SALE_REPLACEMENT,
       status: QueryStatus.CONFIRMED,
-      customer_name: 'Infosys BPO (Electronic City)',
+      customer_id: customer1.id,
       device_details: 'Dell PowerEdge R440 Server - SN: DL-88392-IN',
       replacement_reason: 'RAID controller failure under warranty within 30 days of sale.',
       replaced_with: 'Dell PowerEdge R440 (Brand New Unit - SN: DL-99210-IN)',
@@ -283,7 +301,7 @@ async function main() {
     data: {
       query_type: QueryType.RENT_REPAIR,
       status: QueryStatus.QC_CHECKED,
-      customer_name: 'Zomato HQ Gurgaon',
+      customer_id: customer2.id,
       device_details: 'HP EliteBook 840 G8 (Rental Fleet #R-402)',
       assigned_to_id: emp1.id,
       QueryEvents: {
@@ -321,7 +339,7 @@ async function main() {
     data: {
       query_type: QueryType.NEW_SALE,
       status: QueryStatus.RESOLVED,
-      customer_name: 'Apollo Hospitals South Delhi',
+      customer_id: customer3.id,
       device_details: '10x Lenovo V15 Laptops + 2x Canon LBP226dw Printers',
       QueryEvents: {
         create: [
@@ -357,7 +375,7 @@ async function main() {
     data: {
       query_type: QueryType.GENERAL_REPAIR,
       status: QueryStatus.RECORDED,
-      customer_name: 'Sharma & Sons Logistics (Okhla)',
+      customer_id: customer4.id,
       device_details: 'Epson LQ-310 Dot Matrix Printer',
       QueryEvents: {
         create: [
@@ -376,7 +394,7 @@ async function main() {
 
   await prisma.quotation.create({
     data: {
-      customer_name: 'Mahindra Logistics (Bhiwandi Hub)',
+      customer_id: customer5.id,
       description: 'Annual Maintenance Contract (AMC) for 45 Desktop PCs, 8 Cisco Switches & 4 NAS Storage Units.',
       amount: '₹4,50,000 + GST',
       status: QuotationStatus.PRICE_RECEIVED,
@@ -407,7 +425,7 @@ async function main() {
 
   await prisma.quotation.create({
     data: {
-      customer_name: 'HDFC Bank (Connaught Place Branch)',
+      customer_id: customer6.id,
       description: 'Supply & Installation of 12x 1.5KVA Online UPS with Exide Tubular Batteries.',
       amount: '₹2,85,000',
       status: QuotationStatus.SENT,
@@ -437,22 +455,33 @@ async function main() {
 
   console.log('Seeding Warranty Exchanges...');
 
-  await prisma.warrantyExchange.createMany({
-    data: [
-      {
-        customer_name: 'Swiggy Tech Hub (Koramangala)',
-        device_details: 'Logitech MX Master 3S Wireless Mouse (SN: LZ-99301)',
-        reason: 'Left click double-clicking issue within 11 months of purchase.',
-        exchange_with: 'Logitech MX Master 3S (Replacement Sealed Pack)',
-        status: WarrantyStatus.WARRANTY_CLAIMED,
-      },
-      {
-        customer_name: 'Delhivery Kirti Nagar',
-        device_details: 'Zebra ZT230 Barcode Label Printer (SN: ZB-44102)',
-        reason: 'Thermal printhead bad pixels under 1-year manufacturer warranty.',
-        status: WarrantyStatus.ADDED,
-      },
-    ],
+  await prisma.warrantyExchange.create({
+    data: {
+      supplier_id: supplier3.id,
+      device_details: 'Logitech MX Master 3S Wireless Mouse (SN: LZ-99301)',
+      reason: 'Left click double-clicking issue within 11 months of purchase.',
+      exchange_with: 'Logitech MX Master 3S (Replacement Sealed Pack)',
+      status: WarrantyStatus.WARRANTY_CLAIMED,
+      WarrantyExchangeEvents: {
+        create: [
+          {
+            user_id: coordinator.id,
+            action: 'Sent to supplier for claim',
+            remark: 'Under 1-year warranty.',
+            created_at: daysAgo(2)
+          }
+        ]
+      }
+    }
+  });
+  
+  await prisma.warrantyExchange.create({
+    data: {
+      supplier_id: supplier4.id,
+      device_details: 'Zebra ZT230 Barcode Label Printer (SN: ZB-44102)',
+      reason: 'Thermal printhead bad pixels under 1-year manufacturer warranty.',
+      status: WarrantyStatus.ADDED,
+    }
   });
 
   console.log('Seeding Internal Repairs...');
@@ -460,8 +489,7 @@ async function main() {
   await prisma.internalRepair.create({
     data: {
       item_description: 'Lenovo ThinkCentre M720 Tiny System Board (No Power)',
-      sent_to: 'Nehru Place Micro Repair Hub (Shop 204, Skylark Building)',
-      vendor_shop: 'Shree Ram Chip Level Repairs',
+      supplier_id: supplier1.id,
       sent_date: daysAgo(5),
       status: InternalRepairStatus.SENT_FOR_REPAIR,
       notes: '1st time sent for power IC replacement.',
@@ -487,8 +515,7 @@ async function main() {
   await prisma.internalRepair.create({
     data: {
       item_description: 'Apple MacBook Pro M1 16" Logic Board (Liquid Damage)',
-      sent_to: 'Lamington Road Tech Labs (Mumbai Branch)',
-      vendor_shop: 'iFixit Component Level Lab',
+      supplier_id: supplier2.id,
       sent_date: daysAgo(12),
       received_date: daysAgo(2),
       status: InternalRepairStatus.QC_CHECKED,
@@ -530,6 +557,7 @@ async function main() {
       part_name: 'Crucial 16GB DDR4 3200MHz SODIMM RAM (5 units)',
       for_whom: 'Zomato HQ Laptop Memory Upgrade Project',
       requested_by_id: emp1.id,
+      supplier_id: supplier5.id,
       status: PartRequestStatus.APPROVED_BY_BOSS,
       pricing_received_at: daysAgo(3),
       approved_by_boss_at: daysAgo(1),

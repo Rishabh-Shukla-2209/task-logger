@@ -15,7 +15,8 @@ const REPAIR_STAGES = [
   "RECEIVED_BACK",
   "QC_CHECKED",
   "READY",
-  "SCRAPPED"
+  "SCRAPPED",
+  "DROPPED"
 ]
 
 export default async function RepairDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -32,6 +33,7 @@ export default async function RepairDetailsPage({ params }: { params: Promise<{ 
         include: { user: { select: { username: true } } },
         orderBy: { created_at: "asc" }
       },
+      supplier: true,
     }
   })
 
@@ -53,13 +55,9 @@ export default async function RepairDetailsPage({ params }: { params: Promise<{ 
           <p className="text-sm text-muted-foreground">Item Description</p>
           <p className="font-semibold">{repair.item_description}</p>
         </div>
-        <div>
-          <p className="text-sm text-muted-foreground">Sent To</p>
-          <p className="font-semibold">{repair.sent_to}</p>
-        </div>
-        <div>
-          <p className="text-sm text-muted-foreground">Vendor / Shop</p>
-          <p className="font-semibold">{repair.vendor_shop || "N/A"}</p>
+        <div className="md:col-span-2">
+          <p className="text-sm text-muted-foreground">Supplier / Vendor</p>
+          <p className="font-semibold">{repair.supplier?.name}</p>
         </div>
       </div>
 
@@ -67,8 +65,7 @@ export default async function RepairDetailsPage({ params }: { params: Promise<{ 
         currentStage={repair.status}
         stages={REPAIR_STAGES}
         events={repair.InternalRepairEvents}
-        isFinal={repair.status === "READY" || repair.status === "SCRAPPED"}
-        reopenStage="SENT_FOR_REPAIR" // Re-repair loop starts here
+        isFinal={repair.status === "READY" || repair.status === "SCRAPPED" || repair.status === "DROPPED"}
         readOnly={isReadOnly}
         onTransition={async (newStage, remark) => {
           "use server"

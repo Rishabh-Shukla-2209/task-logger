@@ -13,7 +13,8 @@ const PART_STAGES = [
   "PRICING_RECEIVED",
   "APPROVED_BY_BOSS",
   "ORDERED",
-  "RECEIVED"
+  "RECEIVED",
+  "DROPPED"
 ]
 
 export default async function PartRequestDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -30,7 +31,8 @@ export default async function PartRequestDetailsPage({ params }: { params: Promi
         include: { user: { select: { username: true } } },
         orderBy: { created_at: "asc" }
       },
-      requested_by: { select: { username: true } }
+      requested_by: { select: { username: true } },
+      supplier: true
     }
   })
 
@@ -56,14 +58,17 @@ export default async function PartRequestDetailsPage({ params }: { params: Promi
           <p className="text-sm text-muted-foreground">Requested By</p>
           <p className="font-semibold">{part.requested_by.username}</p>
         </div>
+        <div>
+          <p className="text-sm text-muted-foreground">Supplier</p>
+          <p className="font-semibold">{part.supplier?.name || "N/A"}</p>
+        </div>
       </div>
 
       <AuditableWorkflow
         currentStage={part.status}
         stages={PART_STAGES}
         events={part.PartRequestEvents}
-        isFinal={part.status === "RECEIVED"}
-        reopenStage="RECORDED"
+        isFinal={part.status === "RECEIVED" || part.status === "DROPPED"}
         readOnly={isReadOnly}
         onTransition={async (newStage, remark) => {
           "use server"

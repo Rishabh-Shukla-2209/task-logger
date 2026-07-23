@@ -14,6 +14,7 @@ export async function createPartRequest(formData: FormData) {
 
   const partName = formData.get("part_name") as string
   const forWhom = formData.get("for_whom") as string
+  const supplierId = formData.get("supplier_id") as string | null
 
   if (!partName || !forWhom) {
     throw new Error("Missing fields")
@@ -23,6 +24,7 @@ export async function createPartRequest(formData: FormData) {
     data: {
       part_name: partName,
       for_whom: forWhom,
+      supplier_id: supplierId || null,
       requested_by_id: session.user.id,
       status: "RECORDED",
     },

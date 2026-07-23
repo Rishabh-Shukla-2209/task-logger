@@ -15,6 +15,12 @@ enum Role {
   ADMIN
 }
 
+enum SupplierType {
+  REPAIR_VENDOR
+  PARTS_SUPPLIER
+  BOTH
+}
+
 enum TaskStatus {
   LOGGED
   APPROVED
@@ -46,6 +52,7 @@ enum QueryStatus {
   CLEANED
   CROSS_CHECKED
   RESOLVED
+  DROPPED
 }
 
 enum QuotationStatus {
@@ -56,11 +63,13 @@ enum QuotationStatus {
   DRAFT
   FINAL_APPROVAL
   SENT
+  DROPPED
 }
 
 enum WarrantyStatus {
   ADDED
   WARRANTY_CLAIMED
+  DROPPED
 }
 
 enum InternalRepairStatus {
@@ -71,6 +80,7 @@ enum InternalRepairStatus {
   QC_CHECKED
   READY
   SCRAPPED
+  DROPPED
 }
 
 enum PartRequestStatus {
@@ -79,6 +89,7 @@ enum PartRequestStatus {
   APPROVED_BY_BOSS
   ORDERED
   RECEIVED
+  DROPPED
 }
 
 // ─── CORE MODELS ────────────────────────────────────────
@@ -88,6 +99,8 @@ model User {
   username       String            @unique
   password       String
   role           Role              @default(EMPLOYEE)
+  is_active      Boolean           @default(true)
+  deactivated_at DateTime?
   created_at     DateTime          @default(now())
   updated_at     DateTime          @updatedAt
 
@@ -101,6 +114,7 @@ model User {
   QuotationEvents      QuotationEvent[]
   InternalRepairEvents InternalRepairEvent[]
   PartRequestEvents    PartRequestEvent[]
+  WarrantyExchangeEvents WarrantyExchangeEvent[]
   
   PartRequests       PartRequest[]      @relation("PartRequester")
   ReplacementApprovals ServiceQuery[]   @relation("ReplacementApprover")
@@ -116,7 +130,7 @@ model Task {
   user           User        @relation(fields: [user_id], references: [id])
   log_date       DateTime    @db.Date
   description    String
-  time_taken     String?
+  time_taken_minutes Int?
   remark         String?
   status         TaskStatus  @default(LOGGED)
 
@@ -143,13 +157,42 @@ model TaskAssignment {
   updated_at      DateTime             @updatedAt
 }
 
+// ─── ENTITIES ───────────────────────────────────────────
+
+model Customer {
+  id             String          @id @default(uuid())
+  name           String
+  phone          String?
+  address        String?
+  created_at     DateTime        @default(now())
+  updated_at     DateTime        @updatedAt
+  
+  ServiceQueries ServiceQuery[]
+  Quotations     Quotation[]
+}
+
+model Supplier {
+  id               String            @id @default(uuid())
+  name             String
+  contact          String?
+  address          String?
+  type             SupplierType      @default(BOTH)
+  created_at       DateTime          @default(now())
+  updated_at       DateTime          @updatedAt
+  
+  WarrantyExchanges WarrantyExchange[]
+  InternalRepairs   InternalRepair[]
+  PartRequests      PartRequest[]
+}
+
 // ─── MODULE B: SERVICE DESK ─────────────────────────────
 
 model ServiceQuery {
   id                       String        @id @default(uuid())
   query_type               QueryType
   status                   QueryStatus   @default(RECORDED)
-  customer_name            String
+  customer_id              String
+  customer                 Customer      @relation(fields: [customer_id], references: [id])
   device_details           String?
 
   // Validation / Rules fields
@@ -185,7 +228,8 @@ model QueryEvent {
 
 model Quotation {
   id               String            @id @default(uuid())
-  customer_name    String
+  customer_id      String
+  customer         Customer          @relation(fields: [customer_id], references: [id])
   description      String
   amount           String?
   status           QuotationStatus   @default(RECORDED)
@@ -207,20 +251,33 @@ model QuotationEvent {
 
 model WarrantyExchange {
   id               String          @id @default(uuid())
-  customer_name    String
+  supplier_id      String
+  supplier         Supplier        @relation(fields: [supplier_id], references: [id])
   device_details   String
   reason           String
   exchange_with    String?
   status           WarrantyStatus  @default(ADDED)
   created_at       DateTime        @default(now())
   updated_at       DateTime        @updatedAt
+  WarrantyExchangeEvents WarrantyExchangeEvent[]
+}
+
+model WarrantyExchangeEvent {
+  id                     String           @id @default(uuid())
+  warranty_exchange_id   String
+  warranty_exchange      WarrantyExchange @relation(fields: [warranty_exchange_id], references: [id], onDelete: Cascade)
+  user_id                String
+  user                   User             @relation(fields: [user_id], references: [id])
+  action                 String
+  remark                 String?
+  created_at             DateTime         @default(now())
 }
 
 model InternalRepair {
   id                   String                @id @default(uuid())
   item_description     String
-  vendor_shop          String?
-  sent_to              String
+  supplier_id          String
+  supplier             Supplier              @relation(fields: [supplier_id], references: [id])
   sent_date            DateTime              @db.Date
   received_date        DateTime?             @db.Date
   status               InternalRepairStatus  @default(RECORDED)
@@ -245,6 +302,8 @@ model PartRequest {
   id                     String             @id @default(uuid())
   part_name              String
   for_whom               String
+  supplier_id            String?
+  supplier               Supplier?          @relation(fields: [supplier_id], references: [id])
   requested_by_id        String
   requested_by           User               @relation("PartRequester", fields: [requested_by_id], references: [id])
   pricing_received_at    DateTime?

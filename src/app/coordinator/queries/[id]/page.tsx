@@ -16,14 +16,15 @@ const QUERY_STAGES = [
   "QC_CHECKED",
   "CLEANED",
   "CROSS_CHECKED",
-  "RESOLVED"
+  "RESOLVED",
+  "DROPPED"
 ]
 
 export default async function QueryDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getServerSession(authOptions)
   if (!session || !["COORDINATOR", "MANAGER", "ADMIN"].includes(session.user.role)) redirect("/")
-  
+
   const isReadOnly = session.user.role !== "COORDINATOR"
 
   const query = await prisma.serviceQuery.findUnique({
@@ -33,6 +34,7 @@ export default async function QueryDetailsPage({ params }: { params: Promise<{ i
         include: { user: { select: { username: true } } },
         orderBy: { created_at: "asc" }
       },
+      customer: true,
       confirmed_by: { select: { username: true } },
       assigned_to: { select: { username: true } },
     }
@@ -44,17 +46,17 @@ export default async function QueryDetailsPage({ params }: { params: Promise<{ i
     orderBy: { username: "asc" }
   })
 
-  if (!query) redirect("/coordinator/queries")
+  if (!query) redirect("/coordinator")
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       <div className="flex items-center gap-4">
-        <Link href="/coordinator/queries">
+        <Link href="/coordinator">
           <Button variant="outline" size="sm">
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Queries
           </Button>
         </Link>
-        <h2 className="text-3xl font-bold tracking-tight">Query Details: {query.customer_name}</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Query Details: {query.customer?.name}</h2>
       </div>
 
       <div className="bg-card p-6 rounded-lg border shadow-sm grid md:grid-cols-2 gap-4">
@@ -84,10 +86,10 @@ export default async function QueryDetailsPage({ params }: { params: Promise<{ i
         currentStage={query.status}
         stages={QUERY_STAGES}
         events={query.QueryEvents}
-        isFinal={query.status === "RESOLVED"}
+        isFinal={query.status === "RESOLVED" || query.status === "DROPPED"}
         reopenStage="CONFIRMED"
         employeesForAssignment={employees}
-        requiresReplacementInfoForConfirm={true}
+        requiresReplacementInfoForConfirm={query.query_type === "SALE_REPLACEMENT" || query.query_type === "RENT_REPLACEMENT"}
         readOnly={isReadOnly}
         onTransition={async (newStage, remark, extraData) => {
           "use server"

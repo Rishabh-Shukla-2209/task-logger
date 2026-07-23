@@ -67,8 +67,8 @@ export default async function EmployeePage() {
                   </div>
                   <p className="text-sm font-medium whitespace-pre-wrap mt-2 pr-8">{task.description}</p>
                   
-                  <div className="mt-4 pt-3 border-t text-sm text-muted-foreground">
-                    {task.time_taken && <p><strong>Time:</strong> {task.time_taken}</p>}
+                  <div className="text-sm text-muted-foreground space-y-1 mb-4">
+                    {task.time_taken_minutes && <p><strong>Time:</strong> {task.time_taken_minutes} mins</p>}
                     {task.remark && <p><strong>Remark:</strong> {task.remark}</p>}
                   </div>
                 </CardContent>

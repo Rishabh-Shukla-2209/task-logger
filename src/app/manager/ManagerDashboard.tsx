@@ -12,14 +12,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Edit, Check, X, Loader2, User, History } from "lucide-react"
+import { Edit, Check, X, Loader2, User, History, RotateCcw } from "lucide-react"
 import { TaskHistoryBrowser } from "@/components/shared/TaskHistoryBrowser"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface SerializedTask {
   id: string
   description: string
-  time_taken: string | null
+  time_taken_minutes: number | null
   remark: string | null
   status: string
   manager_edit: string | null
@@ -168,7 +168,7 @@ export function ManagerDashboard({ employees }: { employees: EmployeeWithTasks[]
                         
                         <div className="mt-auto pt-4 flex justify-between items-end">
                           <div className="text-xs text-muted-foreground space-y-1">
-                            {task.time_taken && <div><strong>Time:</strong> {task.time_taken}</div>}
+                            {task.time_taken_minutes && <div><strong>Time:</strong> {task.time_taken_minutes} mins</div>}
                             {task.remark && <div><strong>Remark:</strong> {task.remark}</div>}
                           </div>
                           <Button
@@ -302,22 +302,3 @@ export function ManagerDashboard({ employees }: { employees: EmployeeWithTasks[]
   )
 }
 
-function RotateCcw(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-      <path d="M3 3v5h5" />
-    </svg>
-  )
-}

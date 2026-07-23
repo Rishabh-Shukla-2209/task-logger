@@ -15,7 +15,7 @@ export function InternalRepairsList({ repairs }: { repairs: any[] }) {
   const filtered = repairs.filter(r => {
     if (search && !r.item_description.toLowerCase().includes(search.toLowerCase())) return false
     if (outOnly && !["SENT_FOR_REPAIR", "RECEIVED_BACK"].includes(r.status)) return false
-    if (vendorFilter && (!r.vendor_shop || !r.vendor_shop.toLowerCase().includes(vendorFilter.toLowerCase()))) return false
+    if (vendorFilter && (!r.supplier || !r.supplier.name.toLowerCase().includes(vendorFilter.toLowerCase()))) return false
     return true
   })
 
@@ -47,8 +47,7 @@ export function InternalRepairsList({ repairs }: { repairs: any[] }) {
             <TableHeader>
               <TableRow>
                 <TableHead>Item</TableHead>
-                <TableHead>Vendor/Shop</TableHead>
-                <TableHead>Sent To</TableHead>
+                <TableHead>Supplier/Vendor</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -56,14 +55,13 @@ export function InternalRepairsList({ repairs }: { repairs: any[] }) {
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">No repairs found.</TableCell>
+                  <TableCell colSpan={4} className="text-center text-muted-foreground">No repairs found.</TableCell>
                 </TableRow>
               ) : (
                 filtered.map((repair) => (
                   <TableRow key={repair.id}>
                     <TableCell className="font-medium">{repair.item_description}</TableCell>
-                    <TableCell>{repair.vendor_shop || "N/A"}</TableCell>
-                    <TableCell>{repair.sent_to}</TableCell>
+                    <TableCell>{repair.supplier?.name || "N/A"}</TableCell>
                     <TableCell>
                       <Badge variant="secondary">{repair.status}</Badge>
                     </TableCell>

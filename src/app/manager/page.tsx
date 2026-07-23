@@ -36,7 +36,7 @@ export default async function ManagerPage() {
       loggedTasks: loggedTasks.map(t => ({
         id: t.id,
         description: t.description,
-        time_taken: t.time_taken,
+        time_taken_minutes: t.time_taken_minutes,
         remark: t.remark,
         status: t.status,
         manager_edit: t.manager_edit,

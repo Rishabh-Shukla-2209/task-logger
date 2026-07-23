@@ -24,7 +24,7 @@ export async function addTask(formData: FormData) {
       user_id: session.user.id,
       log_date: new Date(),
       description,
-      time_taken: time_taken || null,
+      time_taken_minutes: time_taken ? parseInt(time_taken, 10) : null,
       remark: remark || null,
       status: "LOGGED",
     },
@@ -53,15 +53,15 @@ export async function editTaskByEmployee(taskId: string, formData: FormData) {
     throw new Error("Task not found or access denied")
   }
 
-  if (task.status === "APPROVED") {
-    return { error: "Task already approved by manager" }
+  if (task.status === "APPROVED" || task.status === "REJECTED") {
+    return { error: `Task cannot be edited because it has already been ${task.status.toLowerCase()}` }
   }
 
   await prisma.task.update({
     where: { id: taskId },
     data: {
       description,
-      time_taken: time_taken || null,
+      time_taken_minutes: time_taken ? parseInt(time_taken, 10) : null,
       remark: remark || null,
       status: "LOGGED" // Ensure status remains logged in case it was rejected
     },
@@ -78,7 +78,7 @@ export async function completeAssignedTask(assignmentId: string) {
   }
 
   await prisma.taskAssignment.update({
-    where: { 
+    where: {
       id: assignmentId,
       assigned_to_id: session.user.id
     },
@@ -160,7 +160,7 @@ export async function approveAssignment(assignmentId: string, approved: boolean)
 
   await prisma.taskAssignment.update({
     where: { id: assignmentId },
-    data: { status: approved ? "APPROVED" : "PENDING" }, 
+    data: { status: approved ? "APPROVED" : "PENDING" },
   })
 
   revalidatePath("/manager")

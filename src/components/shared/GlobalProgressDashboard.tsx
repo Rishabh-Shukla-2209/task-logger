@@ -105,7 +105,7 @@ export function GlobalProgressDashboard() {
                     <a href={`${mod.basePath}/${item.id}`} key={item.id} className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors block w-full text-left">
                       <div className="space-y-1">
                         <p className="font-medium text-indigo-700 hover:underline">
-                          {item.customer_name || item.item_description || item.part_name}
+                          {item.customer?.name || item.supplier?.name || item.item_description || item.part_name}
                         </p>
                         <p className="text-sm text-muted-foreground line-clamp-1">
                           {item.device_details || item.description || item.for_whom || item.sent_to}

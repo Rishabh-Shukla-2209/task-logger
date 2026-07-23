@@ -54,11 +54,12 @@ export function EmployeeEditTaskDialog({ task }: { task: any }) {
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Time Taken (Optional)</label>
+            <label className="text-sm font-medium">Time Taken (minutes)</label>
             <Input 
               name="time_taken" 
-              defaultValue={task.time_taken || ""} 
-              placeholder="e.g. 2 hours"
+              type="number"
+              defaultValue={task.time_taken_minutes || ""} 
+              placeholder="e.g. 120"
             />
           </div>
           <div className="space-y-2">

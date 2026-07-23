@@ -2,62 +2,98 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import prisma from "@/lib/prisma"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { createQuotation } from "@/actions/quotations"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
+import { Eye } from "lucide-react"
+import { PageLayout } from "@/components/coordinator/PageLayout"
+import { DataTable } from "@/components/coordinator/DataTable"
+import { NewQuotationDialog } from "@/components/coordinator/NewQuotationDialog"
+import { Prisma } from "@prisma/client"
 
-export default async function QuotationsPage() {
+export default async function QuotationsPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | undefined }> }) {
   const session = await getServerSession(authOptions)
   if (!session || session.user.role !== "COORDINATOR") redirect("/")
 
-  const quotations = await prisma.quotation.findMany({
-    orderBy: { created_at: "desc" },
-  })
+  const sp = await searchParams
+  const q = sp.q || ""
+  const active = sp.active !== "false"
+  const page = parseInt(sp.page || "1", 10)
+  const pageSize = 15
+
+  const where: Prisma.QuotationWhereInput = {}
+  
+  if (q) {
+    where.customer = {
+      name: { contains: q, mode: "insensitive" }
+    }
+  }
+
+  if (active) {
+    where.status = { notIn: ["SENT", "DROPPED"] } // SENT is the final success stage
+  }
+
+  const [totalCount, quotations] = await Promise.all([
+    prisma.quotation.count({ where }),
+    prisma.quotation.findMany({
+      where,
+      include: { customer: true },
+      orderBy: { created_at: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    })
+  ])
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Quotations</h2>
-        <p className="text-muted-foreground">Manage and track quotations.</p>
-      </div>
-
-      <Card>
-        <CardHeader><CardTitle>Quotations</CardTitle></CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
+    <PageLayout
+      title="Quotations"
+      description="Manage and track customer quotations."
+      headerAction={<NewQuotationDialog createAction={createQuotation} />}
+    >
+      <DataTable totalCount={totalCount} pageSize={pageSize}>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Customer</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="w-[100px]"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {quotations.length === 0 ? (
               <TableRow>
-                <TableHead>Customer</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  No quotations found.
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {quotations.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground">No quotations found.</TableCell>
+            ) : (
+              quotations.map((quotation) => (
+                <TableRow key={quotation.id}>
+                  <TableCell className="font-medium max-w-[120px] truncate sm:max-w-[150px] md:max-w-[200px]" title={quotation.customer.name}>{quotation.customer.name}</TableCell>
+                  <TableCell className="max-w-[150px] truncate sm:max-w-[200px] md:max-w-[300px]" title={quotation.description}>{quotation.description}</TableCell>
+                  <TableCell>{quotation.amount || "N/A"}</TableCell>
+                  <TableCell>
+                    <Badge variant={quotation.status === "SENT" ? "default" : quotation.status === "DROPPED" ? "destructive" : "secondary"}>
+                      {quotation.status.replace(/_/g, " ")}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Link href={`/coordinator/quotations/${quotation.id}`}>
+                      <Button variant="ghost" size="sm" className="cursor-pointer">
+                        <Eye className="w-4 h-4 mr-1" /> View
+                      </Button>
+                    </Link>
+                  </TableCell>
                 </TableRow>
-              ) : (
-                quotations.map((quotation) => (
-                  <TableRow key={quotation.id}>
-                    <TableCell className="font-medium">{quotation.customer_name}</TableCell>
-                    <TableCell>{quotation.description}</TableCell>
-                    <TableCell>{quotation.amount || "N/A"}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{quotation.status}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <a href={`/coordinator/quotations/${quotation.id}`} className="text-indigo-600 hover:underline">View</a>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </DataTable>
+    </PageLayout>
   )
 }

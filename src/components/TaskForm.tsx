@@ -77,10 +77,11 @@ export function EmployeeTaskForm() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Time taken</label>
+                    <label className="text-sm font-medium">Time taken (minutes)</label>
                     <Input
                       name="time_taken"
-                      placeholder="e.g., 2 hours"
+                      type="number"
+                      placeholder="e.g., 120"
                     />
                   </div>
                   <div className="space-y-2">

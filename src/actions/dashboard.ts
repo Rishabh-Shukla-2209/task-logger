@@ -14,21 +14,25 @@ export async function fetchGlobalProgress() {
   const [activeQueries, activeQuotations, activeParts, activeRepairs] = await Promise.all([
     prisma.serviceQuery.findMany({
       where: { status: { not: "RESOLVED" } },
+      include: { customer: true },
       orderBy: { updated_at: "desc" },
       take: 10
     }),
     prisma.quotation.findMany({
       where: { status: { not: "SENT" } },
+      include: { customer: true },
       orderBy: { updated_at: "desc" },
       take: 10
     }),
     prisma.partRequest.findMany({
       where: { status: { not: "RECEIVED" } },
+      include: { supplier: true },
       orderBy: { updated_at: "desc" },
       take: 10
     }),
     prisma.internalRepair.findMany({
       where: { status: { notIn: ["READY", "SCRAPPED"] } },
+      include: { supplier: true },
       orderBy: { updated_at: "desc" },
       take: 10
     })

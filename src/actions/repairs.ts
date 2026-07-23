@@ -13,18 +13,16 @@ export async function createInternalRepair(formData: FormData) {
   }
 
   const itemDescription = formData.get("item_description") as string
-  const sentTo = formData.get("sent_to") as string
-  const vendorShop = formData.get("vendor_shop") as string | null
+  const supplierId = formData.get("supplier_id") as string
 
-  if (!itemDescription || !sentTo) {
+  if (!itemDescription || !supplierId) {
     throw new Error("Missing required fields")
   }
 
   const req = await prisma.internalRepair.create({
     data: {
       item_description: itemDescription,
-      sent_to: sentTo,
-      vendor_shop: vendorShop || null,
+      supplier_id: supplierId,
       sent_date: new Date(),
       status: "RECORDED",
     },

@@ -12,17 +12,17 @@ export async function createQuotation(formData: FormData) {
     throw new Error("Unauthorized")
   }
 
-  const customerName = formData.get("customer_name") as string
+  const customerId = formData.get("customer_id") as string
   const description = formData.get("description") as string
   const amount = formData.get("amount") as string | null
 
-  if (!customerName || !description) {
+  if (!customerId || !description) {
     throw new Error("Missing required fields")
   }
 
   const req = await prisma.quotation.create({
     data: {
-      customer_name: customerName,
+      customer_id: customerId,
       description,
       amount: amount || null,
       status: "RECORDED",

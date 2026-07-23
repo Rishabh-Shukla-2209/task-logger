@@ -53,7 +53,7 @@ export default async function AdminEmployeesPage() {
                       <TableRow key={task.id}>
                         <TableCell>{new Date(task.log_date).toLocaleDateString()}</TableCell>
                         <TableCell className="max-w-[300px] truncate">{task.description}</TableCell>
-                        <TableCell>{task.time_taken || "-"}</TableCell>
+                        <TableCell>{task.time_taken_minutes ? `${task.time_taken_minutes} mins` : "-"}</TableCell>
                         <TableCell>
                           <Badge variant={
                             task.status === "APPROVED" ? "default" :

@@ -57,7 +57,7 @@ export function AuditableWorkflow({
 
   const handleTransition = async () => {
     if (!selectedNextStage) return
-    
+
     if (selectedNextStage === "ASSIGNED" && employeesForAssignment && !selectedAssignee) {
       alert("Please select an employee to assign this ticket to.")
       return
@@ -109,9 +109,8 @@ export function AuditableWorkflow({
     }
   }
 
-  // Find the index of current stage to only allow forward transitions
-  const currentIndex = stages.indexOf(currentStage)
-  const availableNextStages = currentIndex !== -1 ? stages.slice(currentIndex + 1) : []
+  // Allow moving to any stage EXCEPT the first stage (index 0) and the current stage
+  const availableNextStages = stages.filter((stage, index) => index !== 0 && stage !== currentStage)
 
   return (
     <div className={`grid grid-cols-1 ${readOnly ? '' : 'md:grid-cols-2'} gap-6`}>
@@ -124,139 +123,139 @@ export function AuditableWorkflow({
             </div>
           </CardHeader>
           <CardContent className="flex-1 flex flex-col justify-between space-y-4">
-            
+
             {!isFinal ? (
               <div className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Add Remark / Notes</label>
-                <Textarea 
-                  placeholder="Enter any notes or remarks before transitioning or just to log information..."
-                  value={remark}
-                  onChange={(e) => setRemark(e.target.value)}
-                  className="resize-none h-32"
-                />
-              </div>
-
-              <div className="space-y-4 pt-4 border-t">
-                <Button 
-                  onClick={handleAddRemark} 
-                  disabled={loading || !remark.trim()} 
-                  variant="outline" 
-                  className="w-full"
-                >
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  Add Remark Only (Stay in {currentStage})
-                </Button>
-
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Transition to Next Stage</label>
-                  <div className="flex flex-col gap-4">
-                    <div className="flex gap-2">
-                      <Select value={selectedNextStage} onValueChange={(v) => { 
-                        setSelectedNextStage(v || ""); 
-                        setSelectedAssignee("");
-                        setReplacedWith("");
-                        setConfirmedById("");
-                      }}>
-                        <SelectTrigger className="flex-1">
-                          <SelectValue placeholder="Select next stage" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableNextStages.map(stage => (
-                            <SelectItem key={stage} value={stage}>{stage}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button 
-                        onClick={handleTransition} 
-                        disabled={loading || !selectedNextStage || 
-                          (selectedNextStage === "ASSIGNED" && !!employeesForAssignment && !selectedAssignee) ||
-                          (selectedNextStage === "CONFIRMED" && !!requiresReplacementInfoForConfirm && (!replacedWith || !confirmedById))
-                        }
-                      >
-                        <ArrowRight className="mr-2 h-4 w-4" />
-                        Move
-                      </Button>
-                    </div>
+                  <label className="text-sm font-medium">Add Remark / Notes</label>
+                  <Textarea
+                    placeholder="Enter any notes or remarks before transitioning or just to log information..."
+                    value={remark}
+                    onChange={(e) => setRemark(e.target.value)}
+                    className="resize-none h-32"
+                  />
+                </div>
 
-                    {selectedNextStage === "CONFIRMED" && requiresReplacementInfoForConfirm && (
-                      <div className="flex flex-col gap-3 p-3 bg-muted/50 rounded-md border">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase">Confirmation Details Required</p>
-                        <div className="space-y-1">
-                          <label className="text-xs font-medium">Replaced With</label>
-                          <Input 
-                            value={replacedWith} 
-                            onChange={e => setReplacedWith(e.target.value)} 
-                            placeholder="e.g. Dell PowerEdge R440 (Brand New Unit - SN: XYZ)" 
-                            className="h-8 text-sm"
-                          />
+                <div className="space-y-4 pt-4 border-t">
+                  <Button
+                    onClick={handleAddRemark}
+                    disabled={loading || !remark.trim()}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <MessageSquare className="mr-2 h-4 w-4" />
+                    Add Remark Only (Stay in {currentStage})
+                  </Button>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Transition to Next Stage</label>
+                    <div className="flex flex-col gap-4">
+                      <div className="flex gap-2">
+                        <Select value={selectedNextStage} onValueChange={(v) => {
+                          setSelectedNextStage(v || "");
+                          setSelectedAssignee("");
+                          setReplacedWith("");
+                          setConfirmedById("");
+                        }}>
+                          <SelectTrigger className="flex-1">
+                            <SelectValue placeholder="Select next stage" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableNextStages.map(stage => (
+                              <SelectItem key={stage} value={stage}>{stage}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          onClick={handleTransition}
+                          disabled={loading || !selectedNextStage ||
+                            (selectedNextStage === "ASSIGNED" && !!employeesForAssignment && !selectedAssignee) ||
+                            (selectedNextStage === "CONFIRMED" && !!requiresReplacementInfoForConfirm && (!replacedWith || !confirmedById))
+                          }
+                        >
+                          <ArrowRight className="mr-2 h-4 w-4" />
+                          Move
+                        </Button>
+                      </div>
+
+                      {selectedNextStage === "CONFIRMED" && requiresReplacementInfoForConfirm && (
+                        <div className="flex flex-col gap-3 p-3 bg-muted/50 rounded-md border">
+                          <p className="text-xs font-semibold text-muted-foreground uppercase">Confirmation Details Required</p>
+                          <div className="space-y-1">
+                            <label className="text-xs font-medium">Replaced With</label>
+                            <Input
+                              value={replacedWith}
+                              onChange={e => setReplacedWith(e.target.value)}
+                              placeholder="e.g. Dell PowerEdge R440 (Brand New Unit - SN: XYZ)"
+                              className="h-8 text-sm"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-xs font-medium">Confirmed By</label>
+                            <Select value={confirmedById} onValueChange={(v) => setConfirmedById(v || "")}>
+                              <SelectTrigger className="h-8 text-sm">
+                                <SelectValue placeholder="Select coordinator/manager..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {employeesForAssignment?.map(emp => (
+                                  <SelectItem key={emp.id} value={emp.id}>{emp.username}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
                         </div>
-                        <div className="space-y-1">
-                          <label className="text-xs font-medium">Confirmed By</label>
-                          <Select value={confirmedById} onValueChange={(v) => setConfirmedById(v || "")}>
-                            <SelectTrigger className="h-8 text-sm">
-                              <SelectValue placeholder="Select coordinator/manager..." />
+                      )}
+
+                      {selectedNextStage === "ASSIGNED" && employeesForAssignment && (
+                        <div className="flex gap-2">
+                          <Select value={selectedAssignee} onValueChange={(v) => setSelectedAssignee(v || "")}>
+                            <SelectTrigger className="flex-1">
+                              <SelectValue placeholder="Select employee to assign to..." />
                             </SelectTrigger>
                             <SelectContent>
-                              {employeesForAssignment?.map(emp => (
+                              {employeesForAssignment.map(emp => (
                                 <SelectItem key={emp.id} value={emp.id}>{emp.username}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                         </div>
-                      </div>
-                    )}
-
-                    {selectedNextStage === "ASSIGNED" && employeesForAssignment && (
-                      <div className="flex gap-2">
-                        <Select value={selectedAssignee} onValueChange={(v) => setSelectedAssignee(v || "")}>
-                          <SelectTrigger className="flex-1">
-                            <SelectValue placeholder="Select employee to assign to..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {employeesForAssignment.map(emp => (
-                              <SelectItem key={emp.id} value={emp.id}>{emp.username}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full space-y-6 text-center">
-              <div className="rounded-full bg-green-100 p-6">
-                <Badge variant="outline" className="text-xl bg-green-500 text-white border-transparent">
-                  RESOLVED / COMPLETED
-                </Badge>
-              </div>
-              <p className="text-muted-foreground">This ticket has reached its final stage.</p>
-              
-              {onReopen && reopenStage && (
-                <div className="w-full space-y-4 pt-8 border-t mt-auto">
-                  <Textarea 
-                    placeholder="Reason for reopening..."
-                    value={remark}
-                    onChange={(e) => setRemark(e.target.value)}
-                    className="resize-none"
-                  />
-                  <Button 
-                    onClick={handleReopen} 
-                    disabled={loading || !remark.trim()} 
-                    variant="destructive" 
-                    className="w-full"
-                  >
-                    <RotateCcw className="mr-2 h-4 w-4" />
-                    Reopen (Return to {reopenStage})
-                  </Button>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full space-y-6 text-center">
+                <div className="rounded-full bg-green-100 p-6">
+                  <Badge variant="outline" className="text-xl bg-green-500 text-white border-transparent">
+                    RESOLVED / COMPLETED
+                  </Badge>
                 </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                <p className="text-muted-foreground">This ticket has reached its final stage.</p>
+
+                {onReopen && reopenStage && (
+                  <div className="w-full space-y-4 pt-8 border-t mt-auto">
+                    <Textarea
+                      placeholder="Reason for reopening..."
+                      value={remark}
+                      onChange={(e) => setRemark(e.target.value)}
+                      className="resize-none"
+                    />
+                    <Button
+                      onClick={handleReopen}
+                      disabled={loading || !remark.trim()}
+                      variant="destructive"
+                      className="w-full"
+                    >
+                      <RotateCcw className="mr-2 h-4 w-4" />
+                      Reopen (Return to {reopenStage})
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       <Card className={`flex flex-col ${readOnly ? '' : 'h-[600px]'}`}>
@@ -280,8 +279,8 @@ export function AuditableWorkflow({
                       {event.action.includes("→") ? <ArrowRight className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
                     </div>
                     <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-card p-4 rounded border shadow-sm">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="font-semibold text-sm">{event.user.username}</span>
+                      <div className="flex flex-col gap-1 mb-1">
+                        <p className="font-semibold text-sm">{event.user.username}</p>
                         <time className="text-xs text-muted-foreground">{format(new Date(event.created_at), "MMM d, HH:mm")}</time>
                       </div>
                       <div className="text-sm font-medium mb-1">{event.action}</div>

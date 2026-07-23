@@ -13,11 +13,11 @@ export async function createServiceQuery(formData: FormData) {
   }
 
   const queryType = formData.get("query_type") as QueryType
-  const customerName = formData.get("customer_name") as string
+  const customerId = formData.get("customer_id") as string
   const deviceDetails = formData.get("device_details") as string | null
   const replacementReason = formData.get("replacement_reason") as string | null
 
-  if (!queryType || !customerName) {
+  if (!queryType || !customerId) {
     throw new Error("Missing required fields")
   }
 
@@ -29,7 +29,7 @@ export async function createServiceQuery(formData: FormData) {
     data: {
       query_type: queryType,
       status: "RECORDED",
-      customer_name: customerName,
+      customer_id: customerId,
       device_details: deviceDetails || null,
       replacement_reason: replacementReason || null,
     },
@@ -59,11 +59,16 @@ export async function transitionServiceQuery(queryId: string, newStage: string, 
 
   // Validation rules for specific stages
   if (newStage === "CONFIRMED") {
+    const isReplacement = query.query_type === "SALE_REPLACEMENT" || query.query_type === "RENT_REPLACEMENT";
     const replacedWith = extraData?.replacedWith
     const confirmedBy = extraData?.confirmedById
-    if (!replacedWith || !confirmedBy) throw new Error("Missing 'Replaced With' or 'Confirmed By' fields")
-    updateData.replaced_with = replacedWith
-    updateData.confirmed_by_id = confirmedBy
+    if (isReplacement) {
+      if (!replacedWith || !confirmedBy) throw new Error("Missing 'Replaced With' or 'Confirmed By' fields")
+      updateData.replaced_with = replacedWith
+      updateData.confirmed_by_id = confirmedBy
+    } else if (confirmedBy) {
+      updateData.confirmed_by_id = confirmedBy
+    }
   } else if (newStage === "ASSIGNED") {
     const assignedTo = extraData?.assignedToId
     if (!assignedTo) throw new Error("Missing 'Assigned To' field")

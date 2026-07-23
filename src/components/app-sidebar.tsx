@@ -24,6 +24,7 @@ import {
   Truck,
   Users,
   LogOut,
+  History,
   type LucideIcon,
 } from "lucide-react"
 import Link from "next/link"
@@ -42,7 +43,8 @@ export function AppSidebar({ role }: { role: string }) {
         label: "My Work",
         items: [
           { title: "Dashboard", url: "/employee", icon: LayoutDashboard },
-          { title: "Task History", url: "/employee/history", icon: ClipboardList },
+          { title: "Task History", url: "/employee/history", icon: History },
+          { title: "Assignments", url: "/employee/assignments", icon: ClipboardList },
         ],
       },
     ]
@@ -122,7 +124,7 @@ export function AppSidebar({ role }: { role: string }) {
       <div className="mt-auto p-4 border-t">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton render={<Link href="/api/auth/signout" className="text-red-500 hover:text-red-600" />}>
+            <SidebarMenuButton render={<Link href="/signout" className="text-red-500 hover:text-red-600" />}>
               <LogOut className="mr-2" />
               <span>Logout</span>
             </SidebarMenuButton>
