@@ -51,10 +51,30 @@ export function AppSidebar({ role }: { role: string }) {
   } else if (role === "MANAGER") {
     navGroups = [
       {
-        label: "Employee Logs",
+        label: "Overview",
         items: [
-          { title: "Review & Approve", url: "/manager", icon: CheckSquare },
-          { title: "Assign Task", url: "/manager/assign", icon: ListTodo },
+          { title: "Dashboard", url: "/manager", icon: LayoutDashboard },
+        ],
+      },
+      {
+        label: "People",
+        items: [
+          { title: "Employees", url: "/manager/employees", icon: Users },
+        ],
+      },
+      {
+        label: "Service Desk",
+        items: [
+          { title: "Queries", url: "/manager/queries", icon: LayoutDashboard },
+        ],
+      },
+      {
+        label: "Records",
+        items: [
+          { title: "Quotations", url: "/manager/quotations", icon: FileText },
+          { title: "Parts Ordering", url: "/manager/parts", icon: Package },
+          { title: "Warranty Exchange", url: "/manager/warranty", icon: Shield },
+          { title: "Internal Repair", url: "/manager/repairs", icon: Hammer },
         ],
       },
     ]

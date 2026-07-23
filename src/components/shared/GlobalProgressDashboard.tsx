@@ -6,7 +6,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Loader2, Activity, Wrench, Package, FileText } from "lucide-react"
 
-export function GlobalProgressDashboard() {
+import Link from "next/link"
+
+export function GlobalProgressDashboard({ basePathPrefix = "/coordinator" }: { basePathPrefix?: string }) {
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
@@ -38,7 +40,7 @@ export function GlobalProgressDashboard() {
       items: data.queries.data,
       color: "text-blue-500",
       bg: "bg-blue-50",
-      basePath: "/coordinator/queries"
+      basePath: `${basePathPrefix}/queries`
     },
     { 
       title: "Pending Quotations", 
@@ -47,7 +49,7 @@ export function GlobalProgressDashboard() {
       items: data.quotations.data,
       color: "text-amber-500",
       bg: "bg-amber-50",
-      basePath: "/coordinator/quotations"
+      basePath: `${basePathPrefix}/quotations`
     },
     { 
       title: "In-Progress Repairs", 
@@ -56,7 +58,7 @@ export function GlobalProgressDashboard() {
       items: data.repairs.data,
       color: "text-rose-500",
       bg: "bg-rose-50",
-      basePath: "/coordinator/repairs"
+      basePath: `${basePathPrefix}/repairs`
     },
     { 
       title: "Active Part Requests", 
@@ -65,7 +67,7 @@ export function GlobalProgressDashboard() {
       items: data.parts.data,
       color: "text-emerald-500",
       bg: "bg-emerald-50",
-      basePath: "/coordinator/parts"
+      basePath: `${basePathPrefix}/parts`
     },
   ]
 
@@ -94,27 +96,36 @@ export function GlobalProgressDashboard() {
                 <mod.icon className={`h-5 w-5 ${mod.color}`} />
                 <CardTitle className="text-lg">{mod.title}</CardTitle>
               </div>
-              <CardDescription>Recent {mod.items.length} items</CardDescription>
+              <CardDescription>Recent {mod.items.length > 5 ? 5 : mod.items.length} items</CardDescription>
             </CardHeader>
-            <CardContent className="p-0 flex-1">
+            <CardContent className="p-0 flex-1 flex flex-col">
               {mod.items.length === 0 ? (
                 <div className="p-6 text-center text-muted-foreground">All caught up!</div>
               ) : (
-                <div className="divide-y">
-                  {mod.items.map((item: any) => (
-                    <a href={`${mod.basePath}/${item.id}`} key={item.id} className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors block w-full text-left">
-                      <div className="space-y-1">
-                        <p className="font-medium text-indigo-700 hover:underline">
-                          {item.customer?.name || item.supplier?.name || item.item_description || item.part_name}
-                        </p>
-                        <p className="text-sm text-muted-foreground line-clamp-1">
-                          {item.device_details || item.description || item.for_whom || item.sent_to}
-                        </p>
-                      </div>
-                      <Badge variant="outline">{item.status}</Badge>
-                    </a>
-                  ))}
-                </div>
+                <>
+                  <div className="divide-y">
+                    {mod.items.slice(0, 5).map((item: any) => (
+                      <a href={`${mod.basePath}/${item.id}`} key={item.id} className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors block w-full text-left">
+                        <div className="space-y-1">
+                          <p className="font-medium text-indigo-700 hover:underline">
+                            {item.customer?.name || item.supplier?.name || item.item_description || item.part_name}
+                          </p>
+                          <p className="text-sm text-muted-foreground line-clamp-1">
+                            {item.device_details || item.description || item.for_whom || item.sent_to}
+                          </p>
+                        </div>
+                        <Badge variant="outline">{item.status}</Badge>
+                      </a>
+                    ))}
+                  </div>
+                  {mod.items.length > 5 && (
+                    <div className="p-4 border-t mt-auto text-center bg-muted/20">
+                      <Link href={mod.basePath} className="text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline">
+                        View All {mod.count} {mod.title}
+                      </Link>
+                    </div>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
