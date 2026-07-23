@@ -4,12 +4,14 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { startOfDay, endOfDay, subDays } from "date-fns"
+import { TaskStatus } from "@prisma/client"
 
 export async function fetchTaskHistory({
   userId,
   startDate,
   endDate,
   searchQuery,
+  status,
   limit = 7, // days
   offset = 0, // days offset
 }: {
@@ -17,6 +19,7 @@ export async function fetchTaskHistory({
   startDate?: Date;
   endDate?: Date;
   searchQuery?: string;
+  status?: TaskStatus;
   limit?: number;
   offset?: number;
 }) {
@@ -54,7 +57,8 @@ export async function fetchTaskHistory({
       },
       ...(searchQuery ? {
         description: { contains: searchQuery, mode: "insensitive" }
-      } : {})
+      } : {}),
+      ...(status ? { status } : {})
     },
     orderBy: { log_date: "desc" }
   })

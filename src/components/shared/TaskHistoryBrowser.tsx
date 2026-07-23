@@ -1,5 +1,7 @@
 "use client"
 
+import { TaskStatus } from "@prisma/client"
+
 import { useState, useEffect, useCallback } from "react"
 import { fetchTaskHistory } from "@/actions/history"
 import { Input } from "@/components/ui/input"
@@ -26,7 +28,7 @@ interface GroupedTasks {
   tasks: Task[]
 }
 
-export function TaskHistoryBrowser({ userId = "self" }: { userId?: string }) {
+export function TaskHistoryBrowser({ userId = "self", status }: { userId?: string, status?: TaskStatus }) {
   const [groupedTasks, setGroupedTasks] = useState<GroupedTasks[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [debouncedQuery, setDebouncedQuery] = useState("")
@@ -55,6 +57,7 @@ export function TaskHistoryBrowser({ userId = "self" }: { userId?: string }) {
       const res = await fetchTaskHistory({
         userId,
         searchQuery: debouncedQuery,
+        status,
         startDate,
         endDate,
         offset: currentOffset,
@@ -85,7 +88,7 @@ export function TaskHistoryBrowser({ userId = "self" }: { userId?: string }) {
     } finally {
       setLoading(false)
     }
-  }, [userId, debouncedQuery, startDate, endDate, offset])
+  }, [userId, debouncedQuery, status, startDate, endDate, offset])
 
   useEffect(() => {
     loadTasks(false)

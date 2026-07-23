@@ -102,14 +102,27 @@ export function AppSidebar({ role }: { role: string }) {
         label: "Overview",
         items: [
           { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
+        ],
+      },
+      {
+        label: "People",
+        items: [
           { title: "Employees", url: "/admin/employees", icon: Users },
         ],
       },
       {
         label: "Service Desk",
         items: [
-          { title: "All Queries", url: "/admin/queries", icon: ClipboardList },
-          { title: "Parts / Inventory", url: "/admin/parts", icon: Package },
+          { title: "Queries", url: "/admin/queries", icon: LayoutDashboard },
+        ],
+      },
+      {
+        label: "Records",
+        items: [
+          { title: "Quotations", url: "/admin/quotations", icon: FileText },
+          { title: "Parts Ordering", url: "/admin/parts", icon: Package },
+          { title: "Warranty Exchange", url: "/admin/warranty", icon: Shield },
+          { title: "Internal Repair", url: "/admin/repairs", icon: Hammer },
         ],
       },
     ]

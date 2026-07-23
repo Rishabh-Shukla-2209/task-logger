@@ -2,9 +2,9 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import prisma from "@/lib/prisma"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export default async function AdminEmployeesPage() {
   const session = await getServerSession(authOptions)
@@ -12,68 +12,47 @@ export default async function AdminEmployeesPage() {
 
   const employees = await prisma.user.findMany({
     where: { role: "EMPLOYEE" },
-    include: {
-      Tasks: {
-        orderBy: { created_at: "desc" },
-        take: 10,
-      },
-    },
-    orderBy: { username: "asc" },
+    select: { id: true, username: true },
+    orderBy: { username: "asc" }
   })
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Employees</h2>
-        <p className="text-muted-foreground">Read-only view of employee roster and task history.</p>
+    <div className="space-y-8 max-w-7xl mx-auto">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Employees</h2>
+          <p className="text-muted-foreground">Directory of all employees and their work history.</p>
+        </div>
       </div>
 
-      <div className="space-y-6">
-        {employees.map((employee) => (
-          <Card key={employee.id}>
-            <CardHeader className="bg-muted/50 border-b">
-              <div className="flex justify-between items-center">
-                <CardTitle>{employee.username}</CardTitle>
-                <Badge>{employee.role}</Badge>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {employees.map(emp => (
+          <Card key={emp.id} className="overflow-hidden hover:shadow-md transition-shadow">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xl">
+                  {emp.username.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-lg">{emp.username}</h3>
+                  <p className="text-sm text-muted-foreground">Employee</p>
+                </div>
               </div>
-            </CardHeader>
-            <CardContent className="pt-6">
-              {employee.Tasks.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Task</TableHead>
-                      <TableHead>Time</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {employee.Tasks.map((task) => (
-                      <TableRow key={task.id}>
-                        <TableCell>{new Date(task.log_date).toLocaleDateString()}</TableCell>
-                        <TableCell className="max-w-[300px] truncate">{task.description}</TableCell>
-                        <TableCell>{task.time_taken_minutes ? `${task.time_taken_minutes} mins` : "-"}</TableCell>
-                        <TableCell>
-                          <Badge variant={
-                            task.status === "APPROVED" ? "default" :
-                            task.status === "REJECTED" ? "destructive" : "secondary"
-                          }>
-                            {task.status}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <p className="text-muted-foreground text-sm">No tasks logged yet.</p>
-              )}
+              <div className="mt-6 flex justify-end">
+                <Link href={`/admin/employees/${emp.id}`}>
+                  <Button variant="outline" size="sm">
+                    View History
+                  </Button>
+                </Link>
+              </div>
             </CardContent>
           </Card>
         ))}
+
         {employees.length === 0 && (
-          <p className="text-muted-foreground">No employees found.</p>
+          <div className="col-span-full py-12 text-center text-muted-foreground bg-muted/20 rounded-lg border border-dashed">
+            No employees found.
+          </div>
         )}
       </div>
     </div>
