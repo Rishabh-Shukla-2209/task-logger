@@ -2,7 +2,7 @@ import prisma from "@/lib/prisma"
 import { createInternalRepair } from "@/actions/repairs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import Link from "next/link"
 import { Eye } from "lucide-react"
 import { PageLayout } from "@/components/coordinator/PageLayout"
@@ -84,10 +84,10 @@ export async function RepairsListView({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Link href={`${basePath}/${r.id}`}>
-                      <Button variant="ghost" size="sm" className="cursor-pointer">
+                    <Link href={`${basePath}/${r.id}`} className={buttonVariants({ variant: "ghost", size: "sm", className: "cursor-pointer" })}>
+                      
                         <Eye className="w-4 h-4 mr-1" /> View
-                      </Button>
+                      
                     </Link>
                   </TableCell>
                 </TableRow>

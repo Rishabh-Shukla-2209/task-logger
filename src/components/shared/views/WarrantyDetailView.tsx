@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma"
 import { AuditableWorkflow } from "@/components/shared/AuditableWorkflow"
 import { transitionWarrantyExchange, addWarrantyExchangeRemark } from "@/actions/warranty"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { redirect } from "next/navigation"
@@ -37,11 +37,9 @@ export async function WarrantyDetailView({
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       <div className="flex items-center gap-4">
-        <Link href={basePath}>
-          <Button variant="outline" size="sm">
+        <Link href={basePath} className={buttonVariants({ variant: "outline", size: "sm" })}>
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Warranty Claims
-          </Button>
-        </Link>
+          </Link>
         <h2 className="text-3xl font-bold tracking-tight">Warranty Claim</h2>
       </div>
 

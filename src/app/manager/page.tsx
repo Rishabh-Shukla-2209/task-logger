@@ -5,7 +5,7 @@ import prisma from "@/lib/prisma"
 import { GlobalProgressDashboard } from "@/components/shared/GlobalProgressDashboard"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import Link from "next/link"
 import { Users } from "lucide-react"
 
@@ -62,9 +62,7 @@ export default async function ManagerPage() {
             Employees Overview
           </h3>
           {totalEmployees > 5 && (
-            <Link href="/manager/employees">
-              <Button variant="outline">View All {totalEmployees} Employees</Button>
-            </Link>
+            <Link href="/manager/employees" className={buttonVariants({ variant: "outline" })}>View All {totalEmployees} Employees</Link>
           )}
         </div>
         

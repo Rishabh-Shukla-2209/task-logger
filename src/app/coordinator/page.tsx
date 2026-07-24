@@ -7,5 +7,5 @@ export default async function CoordinatorPage({ searchParams }: { searchParams: 
   const session = await getServerSession(authOptions)
   if (!session || session.user.role !== "COORDINATOR") redirect("/")
 
-  return <QueriesListView searchParams={searchParams} basePath="/coordinator" />
+  return <QueriesListView searchParams={searchParams} basePath="/coordinator/queries" />
 }

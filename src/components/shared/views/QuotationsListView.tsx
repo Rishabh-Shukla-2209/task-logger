@@ -2,7 +2,7 @@ import prisma from "@/lib/prisma"
 import { createQuotation } from "@/actions/quotations"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import Link from "next/link"
 import { Eye } from "lucide-react"
 import { PageLayout } from "@/components/coordinator/PageLayout"
@@ -84,10 +84,10 @@ export async function QuotationsListView({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Link href={`${basePath}/${quotation.id}`}>
-                      <Button variant="ghost" size="sm" className="cursor-pointer">
+                    <Link href={`${basePath}/${quotation.id}`} className={buttonVariants({ variant: "ghost", size: "sm", className: "cursor-pointer" })}>
+                      
                         <Eye className="w-4 h-4 mr-1" /> View
-                      </Button>
+                      
                     </Link>
                   </TableCell>
                 </TableRow>

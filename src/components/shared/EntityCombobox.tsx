@@ -20,9 +20,10 @@ interface EntityComboboxProps {
   value: string
   onChange: (value: string) => void
   placeholder?: string
+  disabled?: boolean
 }
 
-export function EntityCombobox({ type, supplierType, value, onChange, placeholder }: EntityComboboxProps) {
+export function EntityCombobox({ type, supplierType, value, onChange, placeholder, disabled }: EntityComboboxProps) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<any[]>([])
@@ -105,18 +106,13 @@ export function EntityCombobox({ type, supplierType, value, onChange, placeholde
   return (
     <>
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger render={
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className="w-full justify-between"
-            type="button"
-          />
-        }>
+        <PopoverTrigger 
+          disabled={disabled}
+          className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 w-full justify-between"
+        >
           {value ? (selectedName || 'Selected') : (placeholder || `Select ${type}...`)}
         </PopoverTrigger>
-        <PopoverContent className="w-[300px] p-0" align="start">
+        <PopoverContent className="w-[350px] md:w-[450px] p-0" align="start">
           <div className="flex items-center border-b px-3">
             <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
             <input

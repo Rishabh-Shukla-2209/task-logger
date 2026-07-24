@@ -77,6 +77,15 @@ export function AppSidebar({ role }: { role: string }) {
           { title: "Internal Repair", url: "/manager/repairs", icon: Hammer },
         ],
       },
+      {
+        label: "Accounting",
+        items: [
+          { title: "Sales", url: "/manager/sales", icon: FileText },
+          { title: "Purchases", url: "/manager/purchases", icon: FileText },
+          { title: "Repairs", url: "/manager/acc-repairs", icon: Hammer },
+          { title: "Replacements", url: "/manager/replacements", icon: Package },
+        ],
+      },
     ]
   } else if (role === "COORDINATOR") {
     navGroups = [
@@ -123,6 +132,34 @@ export function AppSidebar({ role }: { role: string }) {
           { title: "Parts Ordering", url: "/admin/parts", icon: Package },
           { title: "Warranty Exchange", url: "/admin/warranty", icon: Shield },
           { title: "Internal Repair", url: "/admin/repairs", icon: Hammer },
+        ],
+      },
+      {
+        label: "Accounting",
+        items: [
+          { title: "Sales", url: "/admin/sales", icon: FileText },
+          { title: "Purchases", url: "/admin/purchases", icon: FileText },
+          { title: "Repairs", url: "/admin/acc-repairs", icon: Hammer },
+          { title: "Replacements", url: "/admin/replacements", icon: Package },
+        ],
+      },
+    ]
+  } else if (role === "ACCOUNTANT") {
+    navGroups = [
+      {
+        label: "My Work",
+        items: [
+          { title: "Dashboard", url: "/accountant", icon: LayoutDashboard },
+          { title: "Task History", url: "/accountant/history", icon: History },
+        ],
+      },
+      {
+        label: "Accounting",
+        items: [
+          { title: "Sales", url: "/accountant/sales", icon: FileText },
+          { title: "Purchases", url: "/accountant/purchases", icon: FileText },
+          { title: "Repairs", url: "/accountant/repairs", icon: Hammer },
+          { title: "Replacements", url: "/accountant/replacements", icon: Package },
         ],
       },
     ]
