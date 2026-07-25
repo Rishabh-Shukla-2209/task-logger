@@ -6,7 +6,7 @@ import { TransactionType } from "@prisma/client"
 
 async function checkAccess() {
   const session = await getServerSession(authOptions)
-  if (!session || !["ADMIN", "MANAGER", "ACCOUNTANT"].includes(session.user.role)) {
+  if (!session || !["DIRECTOR", "MANAGER", "ACCOUNTANT"].includes(session.user.role)) {
     throw new Error("Unauthorized")
   }
 }

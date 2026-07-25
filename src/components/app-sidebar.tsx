@@ -105,42 +105,42 @@ export function AppSidebar({ role }: { role: string }) {
         ],
       },
     ]
-  } else if (role === "ADMIN") {
+  } else if (role === "DIRECTOR") {
     navGroups = [
       {
         label: "Overview",
         items: [
-          { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
+          { title: "Dashboard", url: "/director", icon: LayoutDashboard },
         ],
       },
       {
         label: "People",
         items: [
-          { title: "Employees", url: "/admin/employees", icon: Users },
+          { title: "Employees", url: "/director/employees", icon: Users },
         ],
       },
       {
         label: "Service Desk",
         items: [
-          { title: "Queries", url: "/admin/queries", icon: LayoutDashboard },
+          { title: "Queries", url: "/director/queries", icon: LayoutDashboard },
         ],
       },
       {
         label: "Records",
         items: [
-          { title: "Quotations", url: "/admin/quotations", icon: FileText },
-          { title: "Parts Ordering", url: "/admin/parts", icon: Package },
-          { title: "Warranty Exchange", url: "/admin/warranty", icon: Shield },
-          { title: "Internal Repair", url: "/admin/repairs", icon: Hammer },
+          { title: "Quotations", url: "/director/quotations", icon: FileText },
+          { title: "Parts Ordering", url: "/director/parts", icon: Package },
+          { title: "Warranty Exchange", url: "/director/warranty", icon: Shield },
+          { title: "Internal Repair", url: "/director/repairs", icon: Hammer },
         ],
       },
       {
         label: "Accounting",
         items: [
-          { title: "Sales", url: "/admin/sales", icon: FileText },
-          { title: "Purchases", url: "/admin/purchases", icon: FileText },
-          { title: "Repairs", url: "/admin/acc-repairs", icon: Hammer },
-          { title: "Replacements", url: "/admin/replacements", icon: Package },
+          { title: "Sales", url: "/director/sales", icon: FileText },
+          { title: "Purchases", url: "/director/purchases", icon: FileText },
+          { title: "Repairs", url: "/director/acc-repairs", icon: Hammer },
+          { title: "Replacements", url: "/director/replacements", icon: Package },
         ],
       },
     ]

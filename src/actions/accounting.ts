@@ -53,7 +53,7 @@ export type TransactionPayload = {
 
 export async function createTransaction(data: TransactionPayload) {
   const session = await getServerSession(authOptions)
-  if (!session || !["ACCOUNTANT", "MANAGER", "ADMIN"].includes(session.user.role)) {
+  if (!session || !["ACCOUNTANT", "MANAGER", "DIRECTOR"].includes(session.user.role)) {
     throw new Error("Unauthorized")
   }
 
@@ -81,8 +81,7 @@ export async function createTransaction(data: TransactionPayload) {
           bundle_name: item.bundle_name,
           bundle_components: item.bundle_components || null,
           price_per_unit: item.price_per_unit,
-          total_price: item.total_price,
-          
+          total_price: item.total_price !== undefined ? item.total_price : (item.type === "BUNDLE" ? item.total_price : ((item.price_per_unit || 0) * (item.type === "SERIALIZED" ? (item.serial_numbers?.length || 0) : (item.quantity || 1)))),
           make: item.make,
           processor: item.processor,
           generation: item.generation,
@@ -116,7 +115,7 @@ export async function fetchTransactions({
   payment_status?: PaymentStatus
 } = {}) {
   const session = await getServerSession(authOptions)
-  if (!session || !["ACCOUNTANT", "MANAGER", "ADMIN"].includes(session.user.role)) {
+  if (!session || !["ACCOUNTANT", "MANAGER", "DIRECTOR"].includes(session.user.role)) {
     throw new Error("Unauthorized")
   }
 
@@ -138,7 +137,7 @@ export async function fetchTransactions({
 
 export async function fetchTransactionById(id: string) {
   const session = await getServerSession(authOptions)
-  if (!session || !["ACCOUNTANT", "MANAGER", "ADMIN"].includes(session.user.role)) {
+  if (!session || !["ACCOUNTANT", "MANAGER", "DIRECTOR"].includes(session.user.role)) {
     throw new Error("Unauthorized")
   }
 
@@ -210,7 +209,7 @@ export async function updateTransaction(id: string, data: TransactionPayload) {
           bundle_name: item.bundle_name,
           bundle_components: item.bundle_components || null,
           price_per_unit: item.price_per_unit,
-          total_price: item.total_price,
+          total_price: item.total_price !== undefined ? item.total_price : (item.type === "BUNDLE" ? item.total_price : ((item.price_per_unit || 0) * (item.type === "SERIALIZED" ? (item.serial_numbers?.length || 0) : (item.quantity || 1)))),
           make: item.make,
           processor: item.processor,
           generation: item.generation,

@@ -13,8 +13,8 @@ export default async function Home() {
     redirect("/employee")
   } else if (session.user.role === "COORDINATOR") {
     redirect("/coordinator")
-  } else if (session.user.role === "ADMIN") {
-    redirect("/admin")
+  } else if (session.user.role === "DIRECTOR") {
+    redirect("/director")
   } else if (session.user.role === "MANAGER") {
     redirect("/manager")
   } else if (session.user.role === "ACCOUNTANT") {

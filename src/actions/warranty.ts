@@ -44,7 +44,7 @@ export async function createWarrantyExchange(formData: FormData) {
 
 export async function transitionWarrantyExchange(warrantyId: string, newStage: string, remark: string) {
   const session = await getServerSession(authOptions)
-  if (!session || !["COORDINATOR", "MANAGER", "ADMIN"].includes(session.user.role)) {
+  if (!session || !["COORDINATOR", "MANAGER", "DIRECTOR"].includes(session.user.role)) {
     throw new Error("Unauthorized")
   }
 
@@ -71,7 +71,7 @@ export async function transitionWarrantyExchange(warrantyId: string, newStage: s
 
 export async function addWarrantyExchangeRemark(warrantyId: string, remark: string) {
   const session = await getServerSession(authOptions)
-  if (!session || !["COORDINATOR", "MANAGER", "ADMIN"].includes(session.user.role)) {
+  if (!session || !["COORDINATOR", "MANAGER", "DIRECTOR"].includes(session.user.role)) {
     throw new Error("Unauthorized")
   }
 

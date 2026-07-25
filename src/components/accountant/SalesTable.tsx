@@ -69,7 +69,7 @@ export function SalesTable({
                     </ul>
                   </TableCell>
                   <TableCell className="align-top min-w-[250px]">
-                    <ul className="list-disc list-inside space-y-2">
+                    <ul className="list-disc list-inside space-y-3">
                       {tx.LineItems?.map((li: any) => {
                         const parts = []
                         if (li.make) parts.push(`Make: ${li.make}`)
@@ -81,9 +81,16 @@ export function SalesTable({
                         if (li.ssd_gb) parts.push(`SSD: ${li.ssd_gb}GB`)
                         if (li.screen_size) parts.push(`Size: ${li.screen_size}`)
                         
+                        const qty = li.quantity || (li.serial_numbers?.length) || 1;
+                        const rate = li.price_per_unit || 0;
+                        const total = li.total_price || (rate * qty) || 0;
+
                         return (
                           <li key={li.id} className="text-sm">
-                            {parts.length > 0 ? parts.join(" | ") : (li.bundle_name || "No details")}
+                            <div className="font-medium">{parts.length > 0 ? parts.join(" | ") : (li.bundle_name || "No details")}</div>
+                            <div className="text-muted-foreground text-xs mt-0.5">
+                              Qty: {qty} &times; Rate: ₹{rate.toFixed(2)} = Total: ₹{total.toFixed(2)}
+                            </div>
                           </li>
                         )
                       })}

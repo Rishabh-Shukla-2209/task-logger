@@ -14,7 +14,7 @@ export async function proxy(req: NextRequest) {
       if (role === 'EMPLOYEE') redirectUrl = '/employee'
       else if (role === 'MANAGER') redirectUrl = '/manager'
       else if (role === 'COORDINATOR') redirectUrl = '/coordinator'
-      else if (role === 'ADMIN') redirectUrl = '/admin'
+      else if (role === 'DIRECTOR') redirectUrl = '/director'
       
       return NextResponse.redirect(new URL(redirectUrl, req.url))
     }

@@ -260,7 +260,13 @@ export function LineItemRow({ item, index, transactionType, updateLineItem, remo
                 <Label>Serial Numbers (comma separated)</Label>
                 <Input 
                   value={item.serial_numbers?.join(", ") || ""} 
-                  onChange={e => updateLineItem(index, { serial_numbers: e.target.value.split(",").map(s => s.trim()).filter(Boolean) })} 
+                  onChange={e => {
+                    const sns = e.target.value.split(",").map(s => s.trim()).filter(Boolean);
+                    updateLineItem(index, { 
+                      serial_numbers: sns, 
+                      total_price: (item.price_per_unit || 0) * sns.length 
+                    });
+                  }}
                   placeholder="SN123, SN124..."
                   readOnly={readOnly}
                 />
@@ -269,13 +275,32 @@ export function LineItemRow({ item, index, transactionType, updateLineItem, remo
             ) : (
               <div className="space-y-2">
                 <Label>Quantity</Label>
-                <Input type="number" min="1" value={item.quantity || 1} onChange={e => updateLineItem(index, { quantity: parseInt(e.target.value) })} required readOnly={readOnly} />
+                <Input type="number" min="1" value={item.quantity || 1} onChange={e => {
+                  const qty = parseInt(e.target.value) || 1;
+                  updateLineItem(index, { 
+                    quantity: qty,
+                    total_price: (item.price_per_unit || 0) * qty 
+                  });
+                }} required readOnly={readOnly} />
               </div>
             )}
             
             <div className="space-y-2">
-              <Label>Price Per Unit</Label>
-              <Input type="number" min="0" step="0.01" value={item.price_per_unit || ""} onChange={e => updateLineItem(index, { price_per_unit: parseFloat(e.target.value) || undefined })} readOnly={readOnly} />
+              <Label>Price Per Unit (Rate)</Label>
+              <Input type="number" min="0" step="0.01" value={item.price_per_unit || ""} onChange={e => {
+                const ppu = parseFloat(e.target.value) || 0;
+                const qty = item.type === "SERIALIZED" ? (item.serial_numbers?.length || 0) : (item.quantity || 1);
+                updateLineItem(index, { price_per_unit: ppu || undefined, total_price: ppu * qty })
+              }} readOnly={readOnly} />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Total Amount</Label>
+              <Input type="number" min="0" step="0.01" value={item.total_price || ""} onChange={e => {
+                const total = parseFloat(e.target.value) || 0;
+                const qty = item.type === "SERIALIZED" ? (item.serial_numbers?.length || 0) : (item.quantity || 1);
+                updateLineItem(index, { total_price: total || undefined, price_per_unit: qty > 0 ? (total / qty) : 0 })
+              }} readOnly={readOnly} />
             </div>
           </>
         )}

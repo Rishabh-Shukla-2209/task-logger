@@ -12,8 +12,9 @@ enum Role {
   EMPLOYEE
   MANAGER
   COORDINATOR
-  ADMIN
+  DIRECTOR
   ACCOUNTANT
+  ADMIN
 }
 
 enum SupplierType {

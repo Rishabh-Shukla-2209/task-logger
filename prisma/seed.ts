@@ -30,7 +30,7 @@ async function main() {
     data: {
       username: 'rajesh_admin',
       password,
-      role: Role.ADMIN,
+      role: Role.DIRECTOR,
     },
   });
 
@@ -38,7 +38,7 @@ async function main() {
     data: {
       username: 'admin1',
       password,
-      role: Role.ADMIN,
+      role: Role.DIRECTOR,
     },
   });
 

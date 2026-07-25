@@ -6,7 +6,7 @@ import prisma from "@/lib/prisma"
 
 export async function fetchGlobalProgress() {
   const session = await getServerSession(authOptions)
-  if (!session || (session.user.role !== "MANAGER" && session.user.role !== "ADMIN")) {
+  if (!session || (session.user.role !== "MANAGER" && session.user.role !== "DIRECTOR")) {
     throw new Error("Unauthorized")
   }
 
