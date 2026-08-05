@@ -9,6 +9,7 @@ import { PageLayout } from "@/components/coordinator/PageLayout"
 import { DataTable } from "@/components/coordinator/DataTable"
 import { NewPartDialog } from "@/components/coordinator/NewPartDialog"
 import { Prisma } from "@prisma/client"
+import { DateFilters, FiltersForm } from "@/components/coordinator/DataTableFilters"
 
 export async function PartsListView({ 
   searchParams, 
@@ -24,6 +25,9 @@ export async function PartsListView({
   const active = sp.active !== "false"
   const page = parseInt(sp.page || "1", 10)
   const pageSize = 15
+  
+  const from = sp.from as string
+  const to = sp.to as string
 
   const where: Prisma.PartRequestWhereInput = {}
 
@@ -33,6 +37,16 @@ export async function PartsListView({
 
   if (active) {
     where.status = { notIn: ["RECEIVED", "DROPPED"] }
+  }
+
+  if (from || to) {
+    where.created_at = {}
+    if (from) {
+      where.created_at.gte = new Date(`${from}T00:00:00.000Z`)
+    }
+    if (to) {
+      where.created_at.lte = new Date(`${to}T23:59:59.999Z`)
+    }
   }
 
   const [totalCount, parts] = await Promise.all([
@@ -52,7 +66,11 @@ export async function PartsListView({
       description="Manage and track part requests."
       headerAction={isReadOnly ? undefined : <NewPartDialog createAction={createPartRequest} />}
     >
-      <DataTable totalCount={totalCount} pageSize={pageSize}>
+      <DataTable 
+        totalCount={totalCount} 
+        pageSize={pageSize}
+        filters={<FiltersForm><DateFilters /></FiltersForm>}
+      >
         <Table>
           <TableHeader>
             <TableRow>

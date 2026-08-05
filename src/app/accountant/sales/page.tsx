@@ -2,15 +2,36 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import prisma from "@/lib/prisma"
-import { SalesTable } from "@/components/accountant/SalesTable"
+import { TransactionsTable } from "@/components/accountant/TransactionsTable"
 import { SingleAnalysis } from "@/components/director/SingleAnalysis"
 
-export default async function SalesPage() {
+export default async function SalesPage(props: any) {
+  const searchParams = await props.searchParams || {};
   const session = await getServerSession(authOptions)
   if (!session || session.user.role !== "ACCOUNTANT") redirect("/")
 
+  let start = searchParams?.start;
+  let end = searchParams?.end;
+  if (!start && !end) {
+    const now = new Date();
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    start = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`;
+    end = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  }
+
+  const where: any = { type: "SALE" };
+  let startDate, endDate;
+  if (start && end) {
+    startDate = new Date(`${start}T00:00:00.000Z`);
+    endDate = new Date(`${end}T23:59:59.999Z`);
+    where.created_at = {
+      gte: startDate,
+      lte: endDate
+    };
+  }
+
   const transactions = await prisma.transaction.findMany({
-    where: { type: "SALE" },
+    where,
     include: {
       customer: true,
       LineItems: {
@@ -23,10 +44,12 @@ export default async function SalesPage() {
   })
 
   return (
-    <SalesTable 
+    <TransactionsTable type="SALE" 
       transactions={transactions} 
       basePath="/accountant"
-      analysisComponent={<SingleAnalysis type="SALE" />}
+      analysisComponent={<SingleAnalysis type="SALE" startDate={startDate} endDate={endDate} />}
+      startDate={start}
+      endDate={end}
     />
   )
 }

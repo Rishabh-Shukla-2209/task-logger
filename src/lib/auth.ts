@@ -2,6 +2,7 @@ import { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import prisma from "./prisma"
 import { Role } from "@prisma/client"
+import bcrypt from "bcryptjs"
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -18,9 +19,11 @@ export const authOptions: NextAuthOptions = {
         const user = await prisma.user.findUnique({
           where: { username: credentials.username }
         })
+        if (!user) return null
 
-        // For MVP, we are using plain text comparison as set in our seed script
-        if (user && user.password === credentials.password) {
+        // Use bcrypt to compare the hashed password
+        const passwordMatch = await bcrypt.compare(credentials.password, user.password)
+        if (passwordMatch) {
           return {
             id: user.id,
             name: user.username,

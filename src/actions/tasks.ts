@@ -26,16 +26,17 @@ export async function addTask(formData: FormData) {
       description,
       time_taken_minutes: time_taken ? parseInt(time_taken, 10) : null,
       remark: remark || null,
-      status: "LOGGED",
+      status: session.user.role === "MANAGER" ? "APPROVED" : "LOGGED",
     },
   })
 
-  revalidatePath("/employee")
+  revalidatePath("/", "layout")
 }
 
 export async function editTaskByEmployee(taskId: string, formData: FormData) {
   const session = await getServerSession(authOptions)
-  if (!session || session.user.role !== "EMPLOYEE") {
+  const allowedRoles = ["EMPLOYEE", "ACCOUNTANT", "COORDINATOR"]
+  if (!session || !allowedRoles.includes(session.user.role)) {
     throw new Error("Unauthorized")
   }
 
@@ -67,13 +68,14 @@ export async function editTaskByEmployee(taskId: string, formData: FormData) {
     },
   })
 
-  revalidatePath("/employee")
+  revalidatePath("/", "layout")
   return { success: true }
 }
 
 export async function completeAssignedTask(assignmentId: string) {
   const session = await getServerSession(authOptions)
-  if (!session || session.user.role !== "EMPLOYEE") {
+  const allowedRoles = ["EMPLOYEE", "ACCOUNTANT", "COORDINATOR"]
+  if (!session || !allowedRoles.includes(session.user.role)) {
     throw new Error("Unauthorized")
   }
 
@@ -85,7 +87,7 @@ export async function completeAssignedTask(assignmentId: string) {
     data: { status: "COMPLETED" },
   })
 
-  revalidatePath("/employee")
+  revalidatePath("/", "layout")
 }
 
 export async function approveTask(taskId: string, approved: boolean) {
@@ -149,7 +151,7 @@ export async function assignTaskToEmployee(formData: FormData) {
     },
   })
 
-  revalidatePath("/employee") // changed route
+  revalidatePath("/", "layout")
 }
 
 export async function approveAssignment(assignmentId: string, approved: boolean) {

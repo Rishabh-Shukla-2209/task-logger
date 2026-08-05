@@ -5,14 +5,24 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { EntityComboboxField } from "@/components/shared/EntityComboboxField"
-import { Plus } from "lucide-react"
+import { Plus, Loader2 } from "lucide-react"
+import { handleError } from "@/lib/errorHandler"
 
 export function NewPartDialog({ createAction }: { createAction: (formData: FormData) => Promise<void> }) {
   const [open, setOpen] = useState(false)
 
+  const [loading, setLoading] = useState(false)
+
   const handleSubmit = async (formData: FormData) => {
-    await createAction(formData)
-    setOpen(false)
+    setLoading(true)
+    try {
+      await createAction(formData)
+      setOpen(false)
+    } catch (error) {
+      handleError(error, "Failed to create part request")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -40,7 +50,10 @@ export function NewPartDialog({ createAction }: { createAction: (formData: FormD
             <EntityComboboxField type="supplier" />
           </div>
 
-          <Button type="submit" className="w-full">Create Request</Button>
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Create Request
+          </Button>
         </form>
       </DialogContent>
     </Dialog>

@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { EntityComboboxField } from "@/components/shared/EntityComboboxField"
-import { Plus } from "lucide-react"
+import { Plus, Loader2 } from "lucide-react"
+import { handleError } from "@/lib/errorHandler"
 
 const QUERY_TYPES = [
   { value: "NEW_SALE", label: "New Sale" },
@@ -21,10 +22,18 @@ const QUERY_TYPES = [
 
 export function NewQueryDialog({ createAction }: { createAction: (formData: FormData) => Promise<void> }) {
   const [open, setOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (formData: FormData) => {
-    await createAction(formData)
-    setOpen(false)
+    setLoading(true)
+    try {
+      await createAction(formData)
+      setOpen(false)
+    } catch (error) {
+      handleError(error, "Failed to create query")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -66,7 +75,10 @@ export function NewQueryDialog({ createAction }: { createAction: (formData: Form
             <Textarea name="replacement_reason" placeholder="Why is replacement needed?" rows={2} />
           </div>
 
-          <Button type="submit" className="w-full">Record Query</Button>
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Record Query
+          </Button>
         </form>
       </DialogContent>
     </Dialog>

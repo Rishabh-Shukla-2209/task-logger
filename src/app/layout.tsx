@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { Providers } from "@/components/Providers"
 import { Toaster } from "sonner"
+import { GlobalErrorListener } from "@/components/GlobalErrorListener"
 
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
@@ -44,6 +45,7 @@ export default async function RootLayout({
               {children}
             </main>
           )}
+          <GlobalErrorListener />
           <Toaster richColors position="top-center" />
         </Providers>
       </body>

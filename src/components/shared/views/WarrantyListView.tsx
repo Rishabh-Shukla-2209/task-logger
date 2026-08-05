@@ -9,6 +9,7 @@ import { PageLayout } from "@/components/coordinator/PageLayout"
 import { DataTable } from "@/components/coordinator/DataTable"
 import { NewWarrantyDialog } from "@/components/coordinator/NewWarrantyDialog"
 import { Prisma } from "@prisma/client"
+import { DateFilters, FiltersForm } from "@/components/coordinator/DataTableFilters"
 
 export async function WarrantyListView({ 
   searchParams, 
@@ -24,6 +25,9 @@ export async function WarrantyListView({
   const active = sp.active !== "false"
   const page = parseInt(sp.page || "1", 10)
   const pageSize = 15
+  
+  const from = sp.from as string
+  const to = sp.to as string
 
   const where: Prisma.WarrantyExchangeWhereInput = {}
   
@@ -35,6 +39,16 @@ export async function WarrantyListView({
 
   if (active) {
     where.status = { notIn: ["WARRANTY_CLAIMED", "DROPPED"] }
+  }
+
+  if (from || to) {
+    where.created_at = {}
+    if (from) {
+      where.created_at.gte = new Date(`${from}T00:00:00.000Z`)
+    }
+    if (to) {
+      where.created_at.lte = new Date(`${to}T23:59:59.999Z`)
+    }
   }
 
   const [totalCount, warranties] = await Promise.all([
@@ -54,7 +68,11 @@ export async function WarrantyListView({
       description="Track components sent for warranty replacement."
       headerAction={isReadOnly ? undefined : <NewWarrantyDialog createAction={createWarrantyExchange} />}
     >
-      <DataTable totalCount={totalCount} pageSize={pageSize}>
+      <DataTable 
+        totalCount={totalCount} 
+        pageSize={pageSize}
+        filters={<FiltersForm><DateFilters /></FiltersForm>}
+      >
         <Table>
           <TableHeader>
             <TableRow>

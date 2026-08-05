@@ -10,32 +10,29 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 import {
   LayoutDashboard,
-  PenTool,
   ClipboardList,
-  CheckSquare,
-  ListTodo,
   FileText,
   Hammer,
   Package,
   Shield,
-  Truck,
   Users,
   LogOut,
   History,
+  PhoneCall,
   type LucideIcon,
-} from "lucide-react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
-type NavItem = { title: string; url: string; icon: LucideIcon }
+type NavItem = { title: string; url: string; icon: LucideIcon };
 
 export function AppSidebar({ role }: { role: string }) {
-  const pathname = usePathname()
+  const pathname = usePathname();
 
-  let navGroups: { label: string; items: NavItem[] }[] = []
+  let navGroups: { label: string; items: NavItem[] }[] = [];
 
   if (role === "EMPLOYEE") {
     navGroups = [
@@ -44,23 +41,30 @@ export function AppSidebar({ role }: { role: string }) {
         items: [
           { title: "Dashboard", url: "/employee", icon: LayoutDashboard },
           { title: "Task History", url: "/employee/history", icon: History },
-          { title: "Assignments", url: "/employee/assignments", icon: ClipboardList },
+          {
+            title: "Assignments",
+            url: "/employee/assignments",
+            icon: ClipboardList,
+          },
         ],
       },
-    ]
+    ];
   } else if (role === "MANAGER") {
     navGroups = [
       {
-        label: "Overview",
+        label: "My Work",
         items: [
-          { title: "Dashboard", url: "/manager", icon: LayoutDashboard },
+          { title: "Tasks", url: "/manager/tasks", icon: ClipboardList },
+          { title: "Task History", url: "/manager/history", icon: History },
         ],
       },
       {
+        label: "Overview",
+        items: [{ title: "Dashboard", url: "/manager", icon: LayoutDashboard }],
+      },
+      {
         label: "People",
-        items: [
-          { title: "Employees", url: "/manager/employees", icon: Users },
-        ],
+        items: [{ title: "Employees", url: "/manager/employees", icon: Users }],
       },
       {
         label: "Service Desk",
@@ -73,7 +77,11 @@ export function AppSidebar({ role }: { role: string }) {
         items: [
           { title: "Quotations", url: "/manager/quotations", icon: FileText },
           { title: "Parts Ordering", url: "/manager/parts", icon: Package },
-          { title: "Warranty Exchange", url: "/manager/warranty", icon: Shield },
+          {
+            title: "Warranty Exchange",
+            url: "/manager/warranty",
+            icon: Shield,
+          },
           { title: "Internal Repair", url: "/manager/repairs", icon: Hammer },
         ],
       },
@@ -83,12 +91,26 @@ export function AppSidebar({ role }: { role: string }) {
           { title: "Sales", url: "/manager/sales", icon: FileText },
           { title: "Purchases", url: "/manager/purchases", icon: FileText },
           { title: "Repairs", url: "/manager/acc-repairs", icon: Hammer },
-          { title: "Replacements", url: "/manager/replacements", icon: Package },
+          { title: "Rent", url: "/manager/rent", icon: Package },
+          { title: "Returns", url: "/manager/returns", icon: Package },
+          {
+            title: "Replacements",
+            url: "/manager/replacements",
+            icon: Package,
+          },
+          { title: "Followups", url: "/manager/followups", icon: ClipboardList },
         ],
       },
-    ]
+    ];
   } else if (role === "COORDINATOR") {
     navGroups = [
+      {
+        label: "My Work",
+        items: [
+          { title: "Tasks", url: "/coordinator/tasks", icon: ClipboardList },
+          { title: "Task History", url: "/coordinator/history", icon: History },
+        ],
+      },
       {
         label: "Service Desk",
         items: [
@@ -98,13 +120,25 @@ export function AppSidebar({ role }: { role: string }) {
       {
         label: "Records",
         items: [
-          { title: "Quotations", url: "/coordinator/quotations", icon: FileText },
+          {
+            title: "Quotations",
+            url: "/coordinator/quotations",
+            icon: FileText,
+          },
           { title: "Parts Ordering", url: "/coordinator/parts", icon: Package },
-          { title: "Warranty Exchange", url: "/coordinator/warranty", icon: Shield },
-          { title: "Internal Repair", url: "/coordinator/repairs", icon: Hammer },
+          {
+            title: "Warranty Exchange",
+            url: "/coordinator/warranty",
+            icon: Shield,
+          },
+          {
+            title: "Internal Repair",
+            url: "/coordinator/repairs",
+            icon: Hammer,
+          },
         ],
       },
-    ]
+    ];
   } else if (role === "DIRECTOR") {
     navGroups = [
       {
@@ -130,7 +164,11 @@ export function AppSidebar({ role }: { role: string }) {
         items: [
           { title: "Quotations", url: "/director/quotations", icon: FileText },
           { title: "Parts Ordering", url: "/director/parts", icon: Package },
-          { title: "Warranty Exchange", url: "/director/warranty", icon: Shield },
+          {
+            title: "Warranty Exchange",
+            url: "/director/warranty",
+            icon: Shield,
+          },
           { title: "Internal Repair", url: "/director/repairs", icon: Hammer },
         ],
       },
@@ -140,10 +178,17 @@ export function AppSidebar({ role }: { role: string }) {
           { title: "Sales", url: "/director/sales", icon: FileText },
           { title: "Purchases", url: "/director/purchases", icon: FileText },
           { title: "Repairs", url: "/director/acc-repairs", icon: Hammer },
-          { title: "Replacements", url: "/director/replacements", icon: Package },
+          { title: "Rent", url: "/director/rent", icon: Package },
+          { title: "Returns", url: "/director/returns", icon: Package },
+          {
+            title: "Replacements",
+            url: "/director/replacements",
+            icon: Package,
+          },
+          { title: "Followups", url: "/director/followups", icon: ClipboardList },
         ],
       },
-    ]
+    ];
   } else if (role === "ACCOUNTANT") {
     navGroups = [
       {
@@ -159,10 +204,58 @@ export function AppSidebar({ role }: { role: string }) {
           { title: "Sales", url: "/accountant/sales", icon: FileText },
           { title: "Purchases", url: "/accountant/purchases", icon: FileText },
           { title: "Repairs", url: "/accountant/repairs", icon: Hammer },
-          { title: "Replacements", url: "/accountant/replacements", icon: Package },
+          { title: "Rent", url: "/accountant/rent", icon: Package },
+          { title: "Returns", url: "/accountant/returns", icon: Package },
+          {
+            title: "Replacements",
+            url: "/accountant/replacements",
+            icon: Package,
+          },
         ],
       },
-    ]
+    ];
+  } else if (role === "ADMIN") {
+    navGroups = [
+      {
+        label: "My Work",
+        items: [
+          { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
+          { title: "Client Calling", url: "/admin/calling", icon: PhoneCall },
+          { title: "Task History", url: "/admin/history", icon: History },
+        ],
+      },
+      {
+        label: "Records",
+        items: [
+          { title: "Payment Followups", url: "/admin/followups", icon: FileText },
+        ],
+      },
+    ];
+  } else if (role === "SUPERUSER") {
+    navGroups = [
+      {
+        label: "Administration",
+        items: [
+          { title: "User Management", url: "/superuser", icon: Users },
+        ],
+      },
+    ];
+  } else if (role === "SALES") {
+    navGroups = [
+      {
+        label: "My Work",
+        items: [
+          { title: "Dashboard", url: "/sales", icon: LayoutDashboard },
+          { title: "Client Calling", url: "/sales/calling", icon: PhoneCall },
+          { title: "Task History", url: "/sales/history", icon: History },
+          {
+            title: "Assignments",
+            url: "/sales/assignments",
+            icon: ClipboardList,
+          },
+        ],
+      },
+    ];
   }
 
   return (
@@ -179,7 +272,13 @@ export function AppSidebar({ role }: { role: string }) {
               <SidebarMenu>
                 {group.items.map((item) => (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton render={<Link href={item.url} />} isActive={pathname === item.url || pathname.startsWith(item.url + "/")}>
+                    <SidebarMenuButton
+                      render={<Link href={item.url} />}
+                      isActive={
+                        pathname === item.url ||
+                        pathname.startsWith(item.url + "/")
+                      }
+                    >
                       <item.icon className="mr-2" />
                       <span>{item.title}</span>
                     </SidebarMenuButton>
@@ -194,7 +293,14 @@ export function AppSidebar({ role }: { role: string }) {
       <div className="mt-auto p-4 border-t">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton render={<Link href="/signout" className="text-red-500 hover:text-red-600" />}>
+            <SidebarMenuButton
+              render={
+                <Link
+                  href="/signout"
+                  className="text-red-500 hover:text-red-600"
+                />
+              }
+            >
               <LogOut className="mr-2" />
               <span>Logout</span>
             </SidebarMenuButton>
@@ -202,5 +308,5 @@ export function AppSidebar({ role }: { role: string }) {
         </SidebarMenu>
       </div>
     </Sidebar>
-  )
+  );
 }

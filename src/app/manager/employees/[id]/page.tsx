@@ -10,7 +10,7 @@ export default async function ManagerEmployeeDetailsPage({ params }: { params: P
   if (!session || session.user.role !== "MANAGER") redirect("/")
 
   const employee = await prisma.user.findUnique({
-    where: { id: id, role: "EMPLOYEE" },
+    where: { id: id, role: { in: ["EMPLOYEE", "ACCOUNTANT", "COORDINATOR"] } },
   })
 
   if (!employee) redirect("/manager/employees")

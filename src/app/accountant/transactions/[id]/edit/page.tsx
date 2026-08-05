@@ -36,7 +36,7 @@ export default async function EditTransactionPage({ params }: { params: Promise<
         suppliers={suppliers}
         employees={employees}
         transaction={transaction}
-        readOnlyCore={session.user.role === "ACCOUNTANT"}
+        readOnlyCore={session.user.role === "ACCOUNTANT" && transaction.type !== "SALE"}
       />
     </div>
   )

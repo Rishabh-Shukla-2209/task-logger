@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { addTask } from "@/actions/tasks"
 import { Plus, Check, Loader2 } from "lucide-react"
 
+import { handleError } from "@/lib/errorHandler"
+
 export function EmployeeTaskForm() {
   const [boxes, setBoxes] = useState([1, 2, 3])
   const [loadingIds, setLoadingIds] = useState<number[]>([])
@@ -22,7 +24,7 @@ export function EmployeeTaskForm() {
       await addTask(formData)
       setCompletedIds((prev) => [...prev, id])
     } catch (error) {
-      console.error(error)
+      handleError(error, "Failed to log task")
     } finally {
       setLoadingIds((prev) => prev.filter((v) => v !== id))
     }

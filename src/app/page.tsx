@@ -19,8 +19,13 @@ export default async function Home() {
     redirect("/manager")
   } else if (session.user.role === "ACCOUNTANT") {
     redirect("/accountant")
+  } else if (session.user.role === "ADMIN") {
+    redirect("/admin")
+  } else if (session.user.role === "SUPERUSER") {
+    redirect("/superuser")
+  } else if (session.user.role === "SALES") {
+    redirect("/sales")
   }
-
   return (
     <div className="p-8 text-center text-red-500">
       Unknown role or configuration error.

@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { editTaskByEmployee } from "@/actions/tasks"
 import { Edit, Loader2 } from "lucide-react"
 import { toast } from "sonner"
+import { handleError } from "@/lib/errorHandler"
 
 export function EmployeeEditTaskDialog({ task }: { task: any }) {
   const [open, setOpen] = useState(false)
@@ -28,7 +29,7 @@ export function EmployeeEditTaskDialog({ task }: { task: any }) {
       toast.success("Task updated successfully")
       setOpen(false)
     } catch (error) {
-      toast.error("An error occurred")
+      handleError(error, "An error occurred while updating the task")
     } finally {
       setLoading(false)
     }

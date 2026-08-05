@@ -1,6 +1,8 @@
 'use server'
 
 import prisma from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 export async function searchCustomers(query: string) {
   if (!query || query.length < 2) {
@@ -18,7 +20,22 @@ export async function searchCustomers(query: string) {
 }
 
 export async function createCustomer(data: { name: string, phone?: string, address?: string }) {
-  return prisma.customer.create({
-    data,
-  })
+  const session = await getServerSession(authOptions)
+  if (!session || !session.user) {
+    throw new Error('Unauthorized')
+  }
+
+  try {
+    return await prisma.customer.create({
+      data: {
+        ...data,
+        user_id: session.user.id,
+      },
+    })
+  } catch (error: any) {
+    if (error.code === 'P2003') {
+      throw new Error("Your session appears to be invalid or expired. Please log out and log in again.")
+    }
+    throw error
+  }
 }

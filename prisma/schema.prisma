@@ -15,6 +15,8 @@ enum Role {
   DIRECTOR
   ACCOUNTANT
   ADMIN
+  SUPERUSER
+  SALES
 }
 
 enum SupplierType {
@@ -94,6 +96,24 @@ enum PartRequestStatus {
   DROPPED
 }
 
+enum PaymentFollowupStatus {
+  ACTIVE
+  RESOLVED
+}
+
+enum CallStatus {
+  DID_NOT_ANSWER
+  INVALID_CONTACT
+  SWITCHED_OFF
+  SOLD
+  FOLLOW_UP
+  DO_NOT_CALL
+  DIFFERENT_REQUIREMENT
+  PRICING_ISSUE
+  QTY_INSUFFICIENT
+  NO_REQUIREMENT_RIGHT_NOW
+}
+
 // ─── CORE MODELS ────────────────────────────────────────
 
 model User {
@@ -126,6 +146,11 @@ model User {
   SalespersonTransactions Transaction[]      @relation("SalespersonTransactions")
   AccountantTransactions  Transaction[]      @relation("AccountantTransactions")
   TransactionAudits       TransactionAudit[]
+
+  PaymentFollowupEvents PaymentFollowupEvent[]
+  CallLogs              CallLog[]
+  CallContacts          CallContact[]
+  Customers             Customer[]
 }
 
 // ─── MODULE A: WORK LOGGING ─────────────────────────────
@@ -167,6 +192,8 @@ model TaskAssignment {
 
 model Customer {
   id         String   @id @default(uuid())
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id])
   name       String
   phone      String?
   address    String?
@@ -176,6 +203,7 @@ model Customer {
   ServiceQueries ServiceQuery[]
   Quotations     Quotation[]
   Transactions   Transaction[]
+  CallContacts   CallContact[]
 }
 
 model Supplier {
@@ -341,6 +369,14 @@ enum TransactionType {
   PURCHASE
   REPLACEMENT
   REPAIR
+  RENT
+  RETURN
+}
+
+enum ReturnType {
+  SALE
+  RENT
+  PURCHASE
 }
 
 enum PaymentStatus {
@@ -376,6 +412,9 @@ model Transaction {
   payment_status  PaymentStatus @default(PENDING)
   payment_account String?       @db.Text
   remark          String?       @db.Text
+
+  rent_start_date DateTime?
+  return_type     ReturnType?
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -447,4 +486,62 @@ model TransactionAudit {
   previous_state Json // Stores the whole Transaction object (including LineItems) before the edit
   remark         String?
   created_at     DateTime @default(now())
+}
+
+// ─── MODULE D: OFFICE ADMIN ─────────────────────────────
+
+model PaymentFollowup {
+  id             String                @id @default(uuid())
+  client_name    String
+  pending_amount Float                 @default(0)
+  status         PaymentFollowupStatus @default(ACTIVE)
+  created_at     DateTime              @default(now())
+  updated_at     DateTime              @updatedAt
+
+  Events PaymentFollowupEvent[]
+}
+
+model PaymentFollowupEvent {
+  id              String          @id @default(uuid())
+  followup_id     String
+  followup        PaymentFollowup @relation(fields: [followup_id], references: [id], onDelete: Cascade)
+  user_id         String
+  user            User            @relation(fields: [user_id], references: [id])
+  action          String // e.g. "RECORDED", "FOLLOW_UP", "RESOLVED"
+  amount_change   Float?
+  previous_amount Float?
+  remark          String?
+  created_at      DateTime        @default(now())
+}
+
+// ─── MODULE E: CLIENT CALLING ───────────────────────────
+
+model CallContact {
+  id          String    @id @default(uuid())
+  user_id     String
+  user        User      @relation(fields: [user_id], references: [id])
+  name        String
+  phone       String
+  location    String?
+  customer_id String?
+  customer    Customer? @relation(fields: [customer_id], references: [id])
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  CallLogs CallLog[]
+}
+
+model CallLog {
+  id          String      @id @default(uuid())
+  contact_id  String
+  contact     CallContact @relation(fields: [contact_id], references: [id], onDelete: Cascade)
+  user_id     String
+  user        User        @relation(fields: [user_id], references: [id])
+  status      CallStatus
+  remark      String?
+  requirement String?
+  price_given Float?
+  price_asked Float?
+  qty         Int?
+  created_at  DateTime    @default(now())
 }

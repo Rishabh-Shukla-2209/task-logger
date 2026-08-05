@@ -247,8 +247,8 @@ export function LineItemRow({ item, index, transactionType, updateLineItem, remo
               <div className="space-y-2 md:col-span-2">
                 <Label>MIS Numbers (comma separated)</Label>
                 <Input 
-                  value={item.mis_numbers?.join(", ") || ""} 
-                  onChange={e => updateLineItem(index, { mis_numbers: e.target.value.split(",").map(s => s.trim()).filter(Boolean) })} 
+                  value={item.mis_numbers?.join(",") || ""} 
+                  onChange={e => updateLineItem(index, { mis_numbers: e.target.value.split(",") })} 
                   placeholder="MIS-001, MIS-002"
                   readOnly={readOnly}
                 />
@@ -259,18 +259,19 @@ export function LineItemRow({ item, index, transactionType, updateLineItem, remo
               <div className="space-y-2 md:col-span-2">
                 <Label>Serial Numbers (comma separated)</Label>
                 <Input 
-                  value={item.serial_numbers?.join(", ") || ""} 
+                  value={item.serial_numbers?.join(",") || ""} 
                   onChange={e => {
-                    const sns = e.target.value.split(",").map(s => s.trim()).filter(Boolean);
+                    const sns = e.target.value.split(",");
+                    const validCount = sns.map(s => s.trim()).filter(Boolean).length;
                     updateLineItem(index, { 
                       serial_numbers: sns, 
-                      total_price: (item.price_per_unit || 0) * sns.length 
+                      total_price: (item.price_per_unit || 0) * validCount 
                     });
                   }}
                   placeholder="SN123, SN124..."
                   readOnly={readOnly}
                 />
-                <p className="text-xs text-muted-foreground">Qty: {item.serial_numbers?.length || 0}</p>
+                <p className="text-xs text-muted-foreground">Qty: {item.serial_numbers?.map(s => s.trim()).filter(Boolean).length || 0}</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -289,7 +290,7 @@ export function LineItemRow({ item, index, transactionType, updateLineItem, remo
               <Label>Price Per Unit (Rate)</Label>
               <Input type="number" min="0" step="0.01" value={item.price_per_unit || ""} onChange={e => {
                 const ppu = parseFloat(e.target.value) || 0;
-                const qty = item.type === "SERIALIZED" ? (item.serial_numbers?.length || 0) : (item.quantity || 1);
+                const qty = item.type === "SERIALIZED" ? (item.serial_numbers?.map(s => s.trim()).filter(Boolean).length || 0) : (item.quantity || 1);
                 updateLineItem(index, { price_per_unit: ppu || undefined, total_price: ppu * qty })
               }} readOnly={readOnly} />
             </div>
@@ -298,7 +299,7 @@ export function LineItemRow({ item, index, transactionType, updateLineItem, remo
               <Label>Total Amount</Label>
               <Input type="number" min="0" step="0.01" value={item.total_price || ""} onChange={e => {
                 const total = parseFloat(e.target.value) || 0;
-                const qty = item.type === "SERIALIZED" ? (item.serial_numbers?.length || 0) : (item.quantity || 1);
+                const qty = item.type === "SERIALIZED" ? (item.serial_numbers?.map(s => s.trim()).filter(Boolean).length || 0) : (item.quantity || 1);
                 updateLineItem(index, { total_price: total || undefined, price_per_unit: qty > 0 ? (total / qty) : 0 })
               }} readOnly={readOnly} />
             </div>

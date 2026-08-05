@@ -3,6 +3,7 @@
 import { TaskStatus } from "@prisma/client"
 
 import { useState, useEffect, useCallback } from "react"
+import { handleError } from "@/lib/errorHandler"
 import { fetchTaskHistory } from "@/actions/history"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -84,7 +85,7 @@ export function TaskHistoryBrowser({ userId = "self", status }: { userId?: strin
       }
       setHasMore(res.data.length > 0)
     } catch (err) {
-      console.error(err)
+      handleError(err, "Failed to load tasks")
     } finally {
       setLoading(false)
     }

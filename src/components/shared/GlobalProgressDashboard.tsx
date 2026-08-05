@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { fetchGlobalProgress } from "@/actions/dashboard"
+import { handleError } from "@/lib/errorHandler"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, Activity, Wrench, Package, FileText } from "lucide-react"
@@ -17,7 +18,7 @@ export function GlobalProgressDashboard({ basePathPrefix = "/coordinator" }: { b
       setData(res)
       setLoading(false)
     }).catch(err => {
-      console.error(err)
+      handleError(err, "Failed to load global dashboard data")
       setLoading(false)
     })
   }, [])

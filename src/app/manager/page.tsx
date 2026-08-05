@@ -18,7 +18,7 @@ export default async function ManagerPage() {
 
   // Fetch employees
   const employees = await prisma.user.findMany({
-    where: { role: "EMPLOYEE" },
+    where: { role: { in: ["EMPLOYEE", "ACCOUNTANT", "COORDINATOR"] } },
     select: { id: true, username: true },
     orderBy: { username: "asc" },
   })

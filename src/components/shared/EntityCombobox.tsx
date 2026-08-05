@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { useState, useEffect, useRef } from 'react'
+import { handleError } from "@/lib/errorHandler"
 import { searchCustomers, createCustomer } from '@/actions/customer-actions'
 import { searchSuppliers, createSupplier } from '@/actions/supplier-actions'
 import { SupplierType } from '@prisma/client'
@@ -48,27 +49,28 @@ export function EntityCombobox({ type, supplierType, value, onChange, placeholde
           setResults(res)
         }
       } catch (err) {
-        console.error(err)
+        handleError(err, `Failed to search ${type}s`)
       }
       setLoading(false)
     }
 
     const timer = setTimeout(() => {
-      if (open) {
+      if (open && query.trim().length >= 2) {
         fetchResults()
+      } else if (open && query.trim().length < 2) {
+        setResults([])
       }
     }, 300)
 
     return () => clearTimeout(timer)
   }, [query, type, supplierType, open])
 
-  // Initial fetch for empty query to show suggestions
+  // Initial fetch removed to prevent huge data loads
   useEffect(() => {
     if (open && query === '') {
-      if (type === 'customer') searchCustomers('').then(setResults)
-      else searchSuppliers('', supplierType).then(setResults)
+      setResults([])
     }
-  }, [open, type, supplierType, query])
+  }, [open, query])
 
   // Fetch selected entity name if value is provided but name is empty (basic hydration if needed, but usually we just set it)
   // For simplicity, we just pass ID. But we need to show the name.
@@ -98,7 +100,7 @@ export function EntityCombobox({ type, supplierType, value, onChange, placeholde
       setNewName('')
       setNewExtra('')
     } catch (err) {
-      console.error(err)
+      handleError(err, `Failed to create ${type}`)
     }
     setCreating(false)
   }
@@ -126,6 +128,10 @@ export function EntityCombobox({ type, supplierType, value, onChange, placeholde
             {loading ? (
               <div className="flex items-center justify-center p-4">
                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              </div>
+            ) : query.trim().length < 2 ? (
+              <div className="py-6 text-center text-sm text-muted-foreground">
+                Start typing to search (min 2 characters)...
               </div>
             ) : results.length === 0 ? (
               <div className="py-6 text-center text-sm text-muted-foreground">
@@ -168,8 +174,10 @@ export function EntityCombobox({ type, supplierType, value, onChange, placeholde
               }}
               type="button"
             >
-              <Plus className="mr-2 h-4 w-4" />
-              Add new {type}
+              <Plus className="mr-2 h-4 w-4 shrink-0" />
+              <span className="truncate">
+                {query.trim().length > 0 ? `Did you mean to add "${query}" as new ${type}?` : `Add new ${type}`}
+              </span>
             </Button>
           </div>
         </PopoverContent>

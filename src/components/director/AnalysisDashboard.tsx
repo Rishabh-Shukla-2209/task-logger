@@ -1,8 +1,10 @@
 "use client"
 import { useState, useEffect } from "react"
+import { handleError } from "@/lib/errorHandler"
 import { getSalesAnalysis, getPurchaseAnalysis, getReplacementAnalysis, getRepairAnalysis } from "@/actions/analysis"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { SingleAnalysis } from "./SingleAnalysis"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Loader2 } from "lucide-react"
@@ -40,7 +42,7 @@ export function AnalysisDashboard() {
         setData(res)
       }
     } catch (error) {
-      console.error(error)
+      handleError(error, "Failed to load analysis data")
       setData([])
     }
     setLoading(false)
@@ -126,14 +128,16 @@ export function AnalysisDashboard() {
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
-            <TabsTrigger value="sales">Sales Analysis</TabsTrigger>
-            <TabsTrigger value="purchases">Purchase Analysis</TabsTrigger>
-            <TabsTrigger value="replacements">Replacements</TabsTrigger>
-            <TabsTrigger value="repairs">Repairs</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-6 h-auto mb-6">
+            <TabsTrigger value="sales" className="py-2">Sales</TabsTrigger>
+            <TabsTrigger value="purchases" className="py-2">Purchases</TabsTrigger>
+            <TabsTrigger value="replacements" className="py-2">Replacements</TabsTrigger>
+            <TabsTrigger value="repairs" className="py-2">Repairs</TabsTrigger>
+            <TabsTrigger value="rent" className="py-2">Rent</TabsTrigger>
+            <TabsTrigger value="returns" className="py-2">Returns</TabsTrigger>
           </TabsList>
           
-          {loading && (
+          {(loading && ["sales", "purchases", "replacements", "repairs"].includes(activeTab)) && (
             <div className="flex justify-center items-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
             </div>
@@ -197,6 +201,14 @@ export function AnalysisDashboard() {
 
               <TabsContent value="repairs" className="space-y-4">
                 {renderRepairTable()}
+              </TabsContent>
+
+              <TabsContent value="rent" className="space-y-4">
+                <SingleAnalysis type="RENT" />
+              </TabsContent>
+
+              <TabsContent value="returns" className="space-y-4">
+                <SingleAnalysis type="RETURN" />
               </TabsContent>
             </>
           )}

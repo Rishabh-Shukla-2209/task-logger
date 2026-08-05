@@ -12,9 +12,10 @@ interface DataTableProps {
   children: ReactNode
   totalCount: number
   pageSize: number
+  filters?: ReactNode
 }
 
-export function DataTable({ children, totalCount, pageSize }: DataTableProps) {
+export function DataTable({ children, totalCount, pageSize, filters }: DataTableProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -79,18 +80,21 @@ export function DataTable({ children, totalCount, pageSize }: DataTableProps) {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="active-only"
-            checked={defaultActive}
-            onCheckedChange={(checked) => handleActiveToggle(checked as boolean)}
-          />
-          <label
-            htmlFor="active-only"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-          >
-            Active Tickets Only
-          </label>
+        <div className="flex flex-wrap items-center gap-4">
+          {filters}
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="active-only"
+              checked={defaultActive}
+              onCheckedChange={(checked) => handleActiveToggle(checked as boolean)}
+            />
+            <label
+              htmlFor="active-only"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer whitespace-nowrap"
+            >
+              Active Tickets Only
+            </label>
+          </div>
         </div>
       </div>
 

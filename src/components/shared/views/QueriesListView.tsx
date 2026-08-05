@@ -8,7 +8,8 @@ import { Eye } from "lucide-react"
 import { PageLayout } from "@/components/coordinator/PageLayout"
 import { DataTable } from "@/components/coordinator/DataTable"
 import { NewQueryDialog } from "@/components/coordinator/NewQueryDialog"
-import { Prisma } from "@prisma/client"
+import { Prisma, QueryType } from "@prisma/client"
+import { DateFilters, QueryTypeFilter, FiltersForm } from "@/components/coordinator/DataTableFilters"
 
 export async function QueriesListView({ 
   searchParams, 
@@ -24,6 +25,10 @@ export async function QueriesListView({
   const active = sp.active !== "false"
   const page = parseInt(sp.page || "1", 10)
   const pageSize = 15
+  
+  const from = sp.from as string
+  const to = sp.to as string
+  const type = sp.type as QueryType | undefined
 
   const where: Prisma.ServiceQueryWhereInput = {}
   
@@ -35,6 +40,20 @@ export async function QueriesListView({
 
   if (active) {
     where.status = { notIn: ["RESOLVED", "DROPPED"] }
+  }
+
+  if (from || to) {
+    where.created_at = {}
+    if (from) {
+      where.created_at.gte = new Date(`${from}T00:00:00.000Z`)
+    }
+    if (to) {
+      where.created_at.lte = new Date(`${to}T23:59:59.999Z`)
+    }
+  }
+
+  if (type) {
+    where.query_type = type
   }
 
   const [totalCount, queries] = await Promise.all([
@@ -54,7 +73,16 @@ export async function QueriesListView({
       description="Manage service queries through the pipeline."
       headerAction={isReadOnly ? undefined : <NewQueryDialog createAction={createServiceQuery} />}
     >
-      <DataTable totalCount={totalCount} pageSize={pageSize}>
+      <DataTable 
+        totalCount={totalCount} 
+        pageSize={pageSize}
+        filters={
+          <FiltersForm>
+            <DateFilters />
+            <QueryTypeFilter />
+          </FiltersForm>
+        }
+      >
         <Table>
           <TableHeader>
             <TableRow>

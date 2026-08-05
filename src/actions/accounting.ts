@@ -48,6 +48,7 @@ export type TransactionPayload = {
   payment_status: PaymentStatus
   payment_account?: string
   remark?: string
+  created_at?: Date | string
   line_items: LineItemPayload[]
 }
 
@@ -70,6 +71,7 @@ export async function createTransaction(data: TransactionPayload) {
       payment_status: data.payment_status,
       payment_account: data.payment_account,
       remark: data.remark,
+      ...(data.created_at ? { created_at: new Date(data.created_at) } : {}),
       LineItems: {
         create: data.line_items.map((item) => ({
           type: item.type,
@@ -198,6 +200,7 @@ export async function updateTransaction(id: string, data: TransactionPayload) {
       payment_status: data.payment_status,
       payment_account: data.payment_account,
       remark: data.remark,
+      ...(data.created_at ? { created_at: new Date(data.created_at) } : {}),
       LineItems: {
         create: data.line_items.map((item) => ({
           type: item.type,
@@ -233,4 +236,19 @@ export async function updateTransaction(id: string, data: TransactionPayload) {
   revalidatePath(`/accountant/transactions/${id}`)
   revalidatePath("/accountant/transactions")
   return transaction
+}
+
+export async function deleteTransaction(id: string) {
+  const session = await getServerSession(authOptions)
+  if (!session || !["ACCOUNTANT", "MANAGER", "DIRECTOR"].includes(session.user.role)) {
+    throw new Error("Unauthorized")
+  }
+
+  await prisma.transaction.delete({
+    where: { id }
+  })
+
+  revalidatePath("/accountant/transactions")
+  revalidatePath("/manager/transactions")
+  revalidatePath("/director/transactions")
 }
