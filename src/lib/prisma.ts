@@ -3,7 +3,12 @@ import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@prisma/client'
 
 const prismaClientSingleton = () => {
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+  const pool = new Pool({ 
+    connectionString: process.env.DATABASE_URL,
+    max: 2, // Limit connections per Vercel serverless instance to prevent DB exhaustion
+    idleTimeoutMillis: 5000,
+    connectionTimeoutMillis: 10000
+  })
   const adapter = new PrismaPg(pool)
   return new PrismaClient({ adapter })
 }

@@ -19,7 +19,7 @@ export default async function ManagerPage() {
   // Fetch employees
   const employees = await prisma.user.findMany({
     where: { role: { in: ["EMPLOYEE", "ACCOUNTANT", "COORDINATOR"] } },
-    select: { id: true, username: true },
+    select: { id: true, username: true, role: true },
     orderBy: { username: "asc" },
   })
 
@@ -28,15 +28,20 @@ export default async function ManagerPage() {
   const topEmployees = employees.slice(0, 5)
 
   // Fetch pending items for the top 5 employees
-  const employeesWithTasks = await Promise.all(topEmployees.map(async (emp) => {
-    const loggedTasksCount = await prisma.task.count({
-      where: { user_id: emp.id, status: "LOGGED" },
-    })
+  const taskCounts = await prisma.task.groupBy({
+    by: ['user_id'],
+    where: {
+      user_id: { in: topEmployees.map(e => e.id) },
+      status: "LOGGED"
+    },
+    _count: { id: true }
+  })
 
-    return {
-      ...emp,
-      pendingCount: loggedTasksCount
-    }
+  const countMap = new Map(taskCounts.map(tc => [tc.user_id, tc._count.id]))
+
+  const employeesWithTasks = topEmployees.map((emp) => ({
+    ...emp,
+    pendingCount: countMap.get(emp.id) || 0
   }))
 
   return (
@@ -73,7 +78,7 @@ export default async function ManagerPage() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-lg">{emp.username}</h4>
-                      <p className="text-sm text-muted-foreground">Employee</p>
+                      <p className="text-sm text-muted-foreground">{emp.role}</p>
                     </div>
                   </div>
                   {emp.pendingCount > 0 && (

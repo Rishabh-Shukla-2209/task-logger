@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -48,15 +48,7 @@ export function CallingModule({ userId }: { userId: string }) {
   const [statusFilter, setStatusFilter] = useState<CallStatus | "ALL">("ALL");
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
 
-  useEffect(() => {
-    if (activeTab === "contacts") {
-      fetchContacts();
-    } else if (activeTab === "history") {
-      fetchLogs();
-    }
-  }, [activeTab, startDateStr, endDateStr, statusFilter]);
-
-  const fetchContacts = async () => {
+  const fetchContacts = useCallback(async () => {
     setIsLoadingContacts(true);
     try {
       const url = new URL("/api/calling/contacts", window.location.origin);
@@ -73,9 +65,9 @@ export function CallingModule({ userId }: { userId: string }) {
     } finally {
       setIsLoadingContacts(false);
     }
-  };
+  }, [contactSearch]);
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     setIsLoadingLogs(true);
     try {
       const url = new URL("/api/calling/logs", window.location.origin);
@@ -112,7 +104,15 @@ export function CallingModule({ userId }: { userId: string }) {
     } finally {
       setIsLoadingLogs(false);
     }
-  };
+  }, [statusFilter, startDateStr, endDateStr]);
+
+  useEffect(() => {
+    if (activeTab === "contacts") {
+      fetchContacts();
+    } else if (activeTab === "history") {
+      fetchLogs();
+    }
+  }, [activeTab, fetchContacts, fetchLogs]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -216,7 +216,7 @@ export function CallingModule({ userId }: { userId: string }) {
             <CardContent>
               <div className="flex flex-col sm:flex-row justify-between items-center py-4 space-y-4 sm:space-y-0 sm:space-x-4">
                 <div className="w-full sm:w-[250px]">
-                  <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val as any)}>
+                  <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val as CallStatus | "ALL")}>
                     <SelectTrigger>
                       <SelectValue placeholder="Filter by status" />
                     </SelectTrigger>
@@ -227,7 +227,7 @@ export function CallingModule({ userId }: { userId: string }) {
                       <SelectItem value="SWITCHED_OFF">Switched Off</SelectItem>
                       <SelectItem value="SOLD">Sold</SelectItem>
                       <SelectItem value="FOLLOW_UP">Follow-up</SelectItem>
-                      <SelectItem value="DO_NOT_CALL">Don't call again</SelectItem>
+                      <SelectItem value="DO_NOT_CALL">Don&apos;t call again</SelectItem>
                       <SelectItem value="DIFFERENT_REQUIREMENT">Different Requirement</SelectItem>
                       <SelectItem value="PRICING_ISSUE">Pricing Issue</SelectItem>
                       <SelectItem value="QTY_INSUFFICIENT">Qty Insufficient</SelectItem>

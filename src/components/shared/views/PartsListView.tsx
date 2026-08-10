@@ -2,7 +2,7 @@ import prisma from "@/lib/prisma"
 import { createPartRequest } from "@/actions/parts"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
 import Link from "next/link"
 import { Eye } from "lucide-react"
 import { PageLayout } from "@/components/coordinator/PageLayout"
@@ -53,7 +53,7 @@ export async function PartsListView({
     prisma.partRequest.count({ where }),
     prisma.partRequest.findMany({
       where,
-      include: { requested_by: true },
+      include: { requested_by: true, customer: true },
       orderBy: { created_at: "desc" },
       skip: (page - 1) * pageSize,
       take: pageSize,
@@ -75,7 +75,7 @@ export async function PartsListView({
           <TableHeader>
             <TableRow>
               <TableHead>Part</TableHead>
-              <TableHead>For</TableHead>
+              <TableHead>Customer</TableHead>
               <TableHead>Requested By</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-[100px]"></TableHead>
@@ -92,7 +92,7 @@ export async function PartsListView({
               parts.map((part) => (
                 <TableRow key={part.id}>
                   <TableCell className="font-medium max-w-[150px] truncate sm:max-w-[200px] md:max-w-[300px]" title={part.part_name}>{part.part_name}</TableCell>
-                  <TableCell className="max-w-[100px] truncate sm:max-w-[150px]" title={part.for_whom}>{part.for_whom}</TableCell>
+                  <TableCell className="max-w-[100px] truncate sm:max-w-[150px]" title={part.customer?.name}>{part.customer?.name}</TableCell>
                   <TableCell className="max-w-[100px] truncate sm:max-w-[150px]" title={part.requested_by.username}>{part.requested_by.username}</TableCell>
                   <TableCell>
                     <Badge variant={part.status === "RECEIVED" ? "default" : part.status === "DROPPED" ? "destructive" : "secondary"}>

@@ -366,6 +366,10 @@ export function SingleAnalysis({
                 )}
 
                 {type === "REPAIR" && renderRepairTable()}
+
+                {type === "RENT" && renderAggregateTable([{ key: "name", label: "Customer" }])}
+
+                {type === "RETURN" && renderAggregateTable([{ key: "name", label: "Return Type" }])}
               </>
             )}
 

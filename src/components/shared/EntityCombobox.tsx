@@ -176,7 +176,7 @@ export function EntityCombobox({ type, supplierType, value, onChange, placeholde
             >
               <Plus className="mr-2 h-4 w-4 shrink-0" />
               <span className="truncate">
-                {query.trim().length > 0 ? `Did you mean to add "${query}" as new ${type}?` : `Add new ${type}`}
+                Add new {type}
               </span>
             </Button>
           </div>

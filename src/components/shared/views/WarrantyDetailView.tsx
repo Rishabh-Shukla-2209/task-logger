@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma"
 import { AuditableWorkflow } from "@/components/shared/AuditableWorkflow"
 import { transitionWarrantyExchange, addWarrantyExchangeRemark } from "@/actions/warranty"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { redirect } from "next/navigation"

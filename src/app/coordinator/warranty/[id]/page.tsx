@@ -6,9 +6,7 @@ import { WarrantyDetailView } from "@/components/shared/views/WarrantyDetailView
 export default async function WarrantyDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getServerSession(authOptions)
-  if (!session || !["COORDINATOR", "MANAGER", "DIRECTOR"].includes(session.user.role)) redirect("/")
-  
-  const isReadOnly = session.user.role !== "COORDINATOR"
+  if (!session || session.user.role !== "COORDINATOR") redirect("/")
 
-  return <WarrantyDetailView id={id} basePath="/coordinator/warranty" isReadOnly={isReadOnly} />
+  return <WarrantyDetailView id={id} basePath="/coordinator/warranty" isReadOnly={false} />
 }

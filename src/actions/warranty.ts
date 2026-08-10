@@ -40,6 +40,8 @@ export async function createWarrantyExchange(formData: FormData) {
   })
 
   revalidatePath("/coordinator/warranty")
+  revalidatePath("/manager/warranty")
+  revalidatePath("/director/warranty")
 }
 
 export async function transitionWarrantyExchange(warrantyId: string, newStage: string, remark: string) {
@@ -51,22 +53,32 @@ export async function transitionWarrantyExchange(warrantyId: string, newStage: s
   const we = await prisma.warrantyExchange.findUnique({ where: { id: warrantyId } })
   if (!we) throw new Error("Warranty Exchange not found")
 
-  await prisma.warrantyExchange.update({
-    where: { id: warrantyId },
-    data: { status: newStage as WarrantyStatus },
-  })
+  const validStages: WarrantyStatus[] = ["ADDED", "WARRANTY_CLAIMED", "DROPPED"]
+  if (!validStages.includes(newStage as WarrantyStatus)) {
+    throw new Error("Invalid stage")
+  }
 
-  await prisma.warrantyExchangeEvent.create({
-    data: {
-      warranty_exchange_id: warrantyId,
-      user_id: session.user.id,
-      action: `${we.status} → ${newStage}`,
-      remark: remark || null,
-    }
-  })
+  await prisma.$transaction([
+    prisma.warrantyExchange.update({
+      where: { id: warrantyId },
+      data: { status: newStage as WarrantyStatus },
+    }),
+    prisma.warrantyExchangeEvent.create({
+      data: {
+        warranty_exchange_id: warrantyId,
+        user_id: session.user.id,
+        action: `Transitioned from ${we.status} to ${newStage}`,
+        remark: remark || null,
+      }
+    })
+  ])
 
   revalidatePath(`/coordinator/warranty/${warrantyId}`)
   revalidatePath("/coordinator/warranty")
+  revalidatePath(`/manager/warranty/${warrantyId}`)
+  revalidatePath("/manager/warranty")
+  revalidatePath(`/director/warranty/${warrantyId}`)
+  revalidatePath("/director/warranty")
 }
 
 export async function addWarrantyExchangeRemark(warrantyId: string, remark: string) {
@@ -85,4 +97,9 @@ export async function addWarrantyExchangeRemark(warrantyId: string, remark: stri
   })
 
   revalidatePath(`/coordinator/warranty/${warrantyId}`)
+  revalidatePath("/coordinator/warranty")
+  revalidatePath(`/manager/warranty/${warrantyId}`)
+  revalidatePath("/manager/warranty")
+  revalidatePath(`/director/warranty/${warrantyId}`)
+  revalidatePath("/director/warranty")
 }

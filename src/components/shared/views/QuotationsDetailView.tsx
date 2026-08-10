@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma"
 import { AuditableWorkflow } from "@/components/shared/AuditableWorkflow"
-import { transitionQuotation, addQuotationRemark } from "@/actions/quotations"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { transitionQuotation, addQuotationRemark, reopenQuotation } from "@/actions/quotations"
+import { buttonVariants } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { redirect } from "next/navigation"
@@ -26,7 +26,7 @@ export async function QuotationsDetailView({
   basePath: string, 
   isReadOnly?: boolean 
 }) {
-  const quotation = await prisma.quotation.findUnique({
+  const req = await prisma.quotation.findUnique({
     where: { id: id },
     include: {
       QuotationEvents: {
@@ -37,7 +37,7 @@ export async function QuotationsDetailView({
     }
   })
 
-  if (!quotation) redirect(basePath)
+  if (!req) redirect(basePath)
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
@@ -45,33 +45,40 @@ export async function QuotationsDetailView({
         <Link href={basePath} className={buttonVariants({ variant: "outline", size: "sm" })}>
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Quotations
           </Link>
-        <h2 className="text-3xl font-bold tracking-tight">Quotation: {quotation.customer?.name}</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Quotation: {req.customer?.name}</h2>
       </div>
 
       <div className="bg-card p-6 rounded-lg border shadow-sm grid md:grid-cols-2 gap-4">
         <div className="md:col-span-2">
           <p className="text-sm text-muted-foreground">Description</p>
-          <p className="font-semibold whitespace-pre-wrap">{quotation.description}</p>
+          <p className="font-semibold whitespace-pre-wrap">{req.description}</p>
         </div>
-        <div>
-          <p className="text-sm text-muted-foreground">Amount</p>
-          <p className="font-semibold">{quotation.amount || "N/A"}</p>
-        </div>
+        {req.amount && (
+          <div>
+            <p className="text-sm text-muted-foreground">Amount</p>
+            <p className="font-semibold">{req.amount}</p>
+          </div>
+        )}
       </div>
 
       <AuditableWorkflow
-        currentStage={quotation.status}
+        currentStage={req.status}
         stages={QUOTATION_STAGES}
-        events={quotation.QuotationEvents}
-        isFinal={quotation.status === "SENT" || quotation.status === "DROPPED"}
+        events={req.QuotationEvents}
+        isFinal={req.status === "SENT" || req.status === "DROPPED"}
+        reopenStage="RECORDED"
         readOnly={isReadOnly}
         onTransition={async (newStage, remark) => {
           "use server"
-          await transitionQuotation(quotation.id, newStage, remark)
+          await transitionQuotation(req.id, newStage, remark)
         }}
         onAddRemark={async (remark) => {
           "use server"
-          await addQuotationRemark(quotation.id, remark)
+          await addQuotationRemark(req.id, remark)
+        }}
+        onReopen={async (remark) => {
+          "use server"
+          await reopenQuotation(req.id, remark)
         }}
       />
     </div>

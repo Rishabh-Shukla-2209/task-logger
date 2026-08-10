@@ -125,7 +125,7 @@ export function LogCallDialog({
                 <SelectItem value="SWITCHED_OFF">Switched Off</SelectItem>
                 <SelectItem value="SOLD">Sold</SelectItem>
                 <SelectItem value="FOLLOW_UP">Follow-up</SelectItem>
-                <SelectItem value="DO_NOT_CALL">Don't call again</SelectItem>
+                <SelectItem value="DO_NOT_CALL">Don&apos;t call again</SelectItem>
                 <SelectItem value="DIFFERENT_REQUIREMENT">Different Requirement</SelectItem>
                 <SelectItem value="PRICING_ISSUE">Pricing Issue</SelectItem>
                 <SelectItem value="QTY_INSUFFICIENT">Qty Insufficient</SelectItem>

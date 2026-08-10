@@ -6,9 +6,7 @@ import { QueriesDetailView } from "@/components/shared/views/QueriesDetailView"
 export default async function QueryDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getServerSession(authOptions)
-  if (!session || !["COORDINATOR", "MANAGER", "DIRECTOR"].includes(session.user.role)) redirect("/")
+  if (!session || session.user.role !== "COORDINATOR") redirect("/")
 
-  const isReadOnly = session.user.role !== "COORDINATOR"
-
-  return <QueriesDetailView id={id} basePath="/coordinator/queries" isReadOnly={isReadOnly} />
+  return <QueriesDetailView id={id} basePath="/coordinator" isReadOnly={false} />
 }

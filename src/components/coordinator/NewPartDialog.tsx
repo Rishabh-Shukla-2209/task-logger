@@ -41,8 +41,8 @@ export function NewPartDialog({ createAction }: { createAction: (formData: FormD
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">For Whom? (Customer / Internal)</label>
-            <Input name="for_whom" placeholder="Customer Name or 'Internal Repair'" required />
+            <label className="text-sm font-medium">Customer</label>
+            <EntityComboboxField type="customer" />
           </div>
 
           <div className="space-y-2">

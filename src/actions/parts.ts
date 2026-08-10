@@ -13,17 +13,17 @@ export async function createPartRequest(formData: FormData) {
   }
 
   const partName = formData.get("part_name") as string
-  const forWhom = formData.get("for_whom") as string
+  const customerId = formData.get("customer_id") as string
   const supplierId = formData.get("supplier_id") as string | null
 
-  if (!partName || !forWhom) {
+  if (!partName || !customerId) {
     throw new Error("Missing fields")
   }
 
   const req = await prisma.partRequest.create({
     data: {
       part_name: partName,
-      for_whom: forWhom,
+      customer_id: customerId,
       supplier_id: supplierId || null,
       requested_by_id: session.user.id,
       status: "RECORDED",
@@ -39,6 +39,35 @@ export async function createPartRequest(formData: FormData) {
   })
 
   revalidatePath("/coordinator/parts")
+  revalidatePath("/manager/parts")
+  revalidatePath("/director/parts")
+}
+
+export async function reopenPartRequest(requestId: string, remark: string) {
+  const session = await getServerSession(authOptions)
+  if (!session || session.user.role !== "COORDINATOR") throw new Error("Unauthorized")
+
+  await prisma.$transaction([
+    prisma.partRequest.update({
+      where: { id: requestId },
+      data: { status: "RECORDED" },
+    }),
+    prisma.partRequestEvent.create({
+      data: {
+        part_request_id: requestId,
+        user_id: session.user.id,
+        action: `Reopened (Moved back to RECORDED)`,
+        remark: remark || null,
+      },
+    })
+  ])
+
+  revalidatePath(`/coordinator/parts/${requestId}`)
+  revalidatePath("/coordinator/parts")
+  revalidatePath(`/manager/parts/${requestId}`)
+  revalidatePath("/manager/parts")
+  revalidatePath(`/director/parts/${requestId}`)
+  revalidatePath("/director/parts")
 }
 
 export async function transitionPartRequest(requestId: string, newStage: string, remark: string) {
@@ -48,22 +77,32 @@ export async function transitionPartRequest(requestId: string, newStage: string,
   const req = await prisma.partRequest.findUnique({ where: { id: requestId } })
   if (!req) throw new Error("Not found")
 
-  await prisma.partRequest.update({
-    where: { id: requestId },
-    data: { status: newStage as PartRequestStatus },
-  })
+  const validStages: PartRequestStatus[] = ["RECORDED", "PRICING_RECEIVED", "APPROVED_BY_BOSS", "ORDERED", "RECEIVED", "DROPPED"]
+  if (!validStages.includes(newStage as PartRequestStatus)) {
+    throw new Error("Invalid stage")
+  }
 
-  await prisma.partRequestEvent.create({
-    data: {
-      part_request_id: requestId,
-      user_id: session.user.id,
-      action: `Transitioned from ${req.status} to ${newStage}`,
-      remark: remark || null,
-    },
-  })
+  await prisma.$transaction([
+    prisma.partRequest.update({
+      where: { id: requestId },
+      data: { status: newStage as PartRequestStatus },
+    }),
+    prisma.partRequestEvent.create({
+      data: {
+        part_request_id: requestId,
+        user_id: session.user.id,
+        action: `Transitioned from ${req.status} to ${newStage}`,
+        remark: remark || null,
+      },
+    })
+  ])
 
   revalidatePath(`/coordinator/parts/${requestId}`)
   revalidatePath("/coordinator/parts")
+  revalidatePath(`/manager/parts/${requestId}`)
+  revalidatePath("/manager/parts")
+  revalidatePath(`/director/parts/${requestId}`)
+  revalidatePath("/director/parts")
 }
 
 export async function addPartRequestRemark(requestId: string, remark: string) {
@@ -80,4 +119,9 @@ export async function addPartRequestRemark(requestId: string, remark: string) {
   })
 
   revalidatePath(`/coordinator/parts/${requestId}`)
+  revalidatePath("/coordinator/parts")
+  revalidatePath(`/manager/parts/${requestId}`)
+  revalidatePath("/manager/parts")
+  revalidatePath(`/director/parts/${requestId}`)
+  revalidatePath("/director/parts")
 }

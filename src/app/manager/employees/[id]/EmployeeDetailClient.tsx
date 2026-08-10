@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { approveTask, approveAssignment, editTaskByManager } from "@/actions/tasks"
+import { approveTask, editTaskByManager } from "@/actions/tasks"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"

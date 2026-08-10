@@ -235,6 +235,8 @@ export async function updateTransaction(id: string, data: TransactionPayload) {
 
   revalidatePath(`/accountant/transactions/${id}`)
   revalidatePath("/accountant/transactions")
+  revalidatePath("/manager/transactions")
+  revalidatePath("/director/transactions")
   return transaction
 }
 

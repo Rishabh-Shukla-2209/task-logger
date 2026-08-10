@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { EmployeeTaskForm } from "@/components/TaskForm"
+import { startOfDay, endOfDay } from "date-fns"
 
 export default async function ManagerTasksPage() {
   const session = await getServerSession(authOptions)
@@ -14,14 +15,14 @@ export default async function ManagerTasksPage() {
   }
 
   const today = new Date()
-  today.setHours(0, 0, 0, 0)
 
   // Fetch manager's tasks for today
   const todaysTasks = await prisma.task.findMany({
     where: { 
       user_id: session.user.id,
       created_at: {
-        gte: today
+        gte: startOfDay(today),
+        lte: endOfDay(today)
       }
     },
     orderBy: { created_at: "desc" },

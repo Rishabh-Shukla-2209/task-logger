@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma"
 import { AuditableWorkflow } from "@/components/shared/AuditableWorkflow"
 import { transitionServiceQuery, addServiceQueryRemark, reopenServiceQuery } from "@/actions/queries"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { redirect } from "next/navigation"
@@ -42,6 +42,12 @@ export async function QueriesDetailView({
 
   const employees = await prisma.user.findMany({
     where: { role: "EMPLOYEE" },
+    select: { id: true, username: true },
+    orderBy: { username: "asc" }
+  })
+
+  const confirmers = await prisma.user.findMany({
+    where: { role: { in: ["COORDINATOR", "MANAGER"] } },
     select: { id: true, username: true },
     orderBy: { username: "asc" }
   })
@@ -87,6 +93,7 @@ export async function QueriesDetailView({
         isFinal={query.status === "RESOLVED" || query.status === "DROPPED"}
         reopenStage="CONFIRMED"
         employeesForAssignment={employees}
+        managersForConfirmation={confirmers}
         requiresReplacementInfoForConfirm={query.query_type === "SALE_REPLACEMENT" || query.query_type === "RENT_REPLACEMENT"}
         readOnly={isReadOnly}
         onTransition={async (newStage, remark, extraData) => {

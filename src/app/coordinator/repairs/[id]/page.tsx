@@ -6,9 +6,7 @@ import { RepairsDetailView } from "@/components/shared/views/RepairsDetailView"
 export default async function RepairDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getServerSession(authOptions)
-  if (!session || !["COORDINATOR", "MANAGER", "DIRECTOR"].includes(session.user.role)) redirect("/")
-  
-  const isReadOnly = session.user.role !== "COORDINATOR"
+  if (!session || session.user.role !== "COORDINATOR") redirect("/")
 
-  return <RepairsDetailView id={id} basePath="/coordinator/repairs" isReadOnly={isReadOnly} />
+  return <RepairsDetailView id={id} basePath="/coordinator/repairs" isReadOnly={false} />
 }

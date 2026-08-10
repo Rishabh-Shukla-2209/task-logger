@@ -44,6 +44,8 @@ export async function createServiceQuery(formData: FormData) {
   })
 
   revalidatePath("/coordinator/queries")
+  revalidatePath("/manager/queries")
+  revalidatePath("/director/queries")
 }
 
 export async function transitionServiceQuery(queryId: string, newStage: string, remark: string, extraData?: { assignedToId?: string, replacedWith?: string, confirmedById?: string }) {
@@ -54,6 +56,11 @@ export async function transitionServiceQuery(queryId: string, newStage: string, 
 
   const query = await prisma.serviceQuery.findUnique({ where: { id: queryId } })
   if (!query) throw new Error("Query not found")
+
+  const validStages: QueryStatus[] = ["RECORDED", "CONFIRMED", "MATERIAL_OUT", "ASSIGNED", "QC_CHECKED", "CLEANED", "CROSS_CHECKED", "RESOLVED", "DROPPED"]
+  if (!validStages.includes(newStage as QueryStatus)) {
+    throw new Error("Invalid stage")
+  }
 
   const updateData: any = { status: newStage as QueryStatus }
 
@@ -75,11 +82,6 @@ export async function transitionServiceQuery(queryId: string, newStage: string, 
     updateData.assigned_to_id = assignedTo
   }
 
-  await prisma.serviceQuery.update({
-    where: { id: queryId },
-    data: updateData,
-  })
-
   let actionString = `Transitioned from ${query.status} to ${newStage}`
 
   if (newStage === "ASSIGNED" && extraData?.assignedToId) {
@@ -90,17 +92,27 @@ export async function transitionServiceQuery(queryId: string, newStage: string, 
     if (confirmer) actionString += ` (Confirmed by: ${confirmer.username})`
   }
 
-  await prisma.queryEvent.create({
-    data: {
-      query_id: queryId,
-      user_id: session.user.id,
-      action: actionString,
-      remark: remark || null,
-    },
-  })
+  await prisma.$transaction([
+    prisma.serviceQuery.update({
+      where: { id: queryId },
+      data: updateData,
+    }),
+    prisma.queryEvent.create({
+      data: {
+        query_id: queryId,
+        user_id: session.user.id,
+        action: actionString,
+        remark: remark || null,
+      },
+    })
+  ])
 
   revalidatePath(`/coordinator/queries/${queryId}`)
   revalidatePath("/coordinator/queries")
+  revalidatePath(`/manager/queries/${queryId}`)
+  revalidatePath("/manager/queries")
+  revalidatePath(`/director/queries/${queryId}`)
+  revalidatePath("/director/queries")
 }
 
 export async function addServiceQueryRemark(queryId: string, remark: string) {
@@ -139,4 +151,8 @@ export async function reopenServiceQuery(queryId: string, remark: string) {
 
   revalidatePath(`/coordinator/queries/${queryId}`)
   revalidatePath("/coordinator/queries")
+  revalidatePath(`/manager/queries/${queryId}`)
+  revalidatePath("/manager/queries")
+  revalidatePath(`/director/queries/${queryId}`)
+  revalidatePath("/director/queries")
 }

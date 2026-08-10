@@ -190,6 +190,7 @@ model Customer {
   Quotations     Quotation[]
   Transactions   Transaction[]
   CallContacts   CallContact[]
+  PartRequests   PartRequest[]
 }
 
 model Supplier {
@@ -324,7 +325,8 @@ model InternalRepairEvent {
 model PartRequest {
   id                  String             @id @default(uuid())
   part_name           String
-  for_whom            String
+  customer_id         String
+  customer            Customer           @relation(fields: [customer_id], references: [id])
   supplier_id         String?
   supplier            Supplier?          @relation(fields: [supplier_id], references: [id])
   requested_by_id     String

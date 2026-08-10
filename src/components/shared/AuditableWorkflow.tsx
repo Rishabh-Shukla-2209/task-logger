@@ -28,7 +28,9 @@ interface AuditableWorkflowProps {
   isFinal: boolean
   reopenStage?: string
   employeesForAssignment?: { id: string, username: string }[]
+  managersForConfirmation?: { id: string, username: string }[]
   requiresReplacementInfoForConfirm?: boolean
+  requiresQCUserAssignment?: boolean
   onTransition: (newStage: string, remark: string, extraData?: { assignedToId?: string, replacedWith?: string, confirmedById?: string }) => Promise<void>
   onAddRemark: (remark: string) => Promise<void>
   onReopen?: (remark: string) => Promise<void>
@@ -42,7 +44,9 @@ export function AuditableWorkflow({
   isFinal,
   reopenStage,
   employeesForAssignment,
+  managersForConfirmation,
   requiresReplacementInfoForConfirm,
+  requiresQCUserAssignment,
   onTransition,
   onAddRemark,
   onReopen,
@@ -58,8 +62,8 @@ export function AuditableWorkflow({
   const handleTransition = async () => {
     if (!selectedNextStage) return
 
-    if (selectedNextStage === "ASSIGNED" && employeesForAssignment && !selectedAssignee) {
-      alert("Please select an employee to assign this ticket to.")
+    if ((selectedNextStage === "ASSIGNED" || (selectedNextStage === "QC_CHECKED" && requiresQCUserAssignment)) && employeesForAssignment && !selectedAssignee) {
+      alert("Please select an employee.")
       return
     }
 
@@ -82,6 +86,8 @@ export function AuditableWorkflow({
       setSelectedAssignee("")
       setReplacedWith("")
       setConfirmedById("")
+    } catch (error: any) {
+      alert(error instanceof Error ? error.message : "An error occurred")
     } finally {
       setLoading(false)
     }
@@ -93,6 +99,8 @@ export function AuditableWorkflow({
     try {
       await onAddRemark(remark)
       setRemark("")
+    } catch (error: any) {
+      alert(error instanceof Error ? error.message : "An error occurred")
     } finally {
       setLoading(false)
     }
@@ -100,10 +108,16 @@ export function AuditableWorkflow({
 
   const handleReopen = async () => {
     if (!onReopen || !reopenStage) return
+    if (!remark.trim()) {
+      alert("Please provide a reason for reopening in the remark field below.")
+      return
+    }
     setLoading(true)
     try {
       await onReopen(remark)
       setRemark("")
+    } catch (error: any) {
+      alert(error instanceof Error ? error.message : "An error occurred")
     } finally {
       setLoading(false)
     }
@@ -169,7 +183,7 @@ export function AuditableWorkflow({
                         <Button
                           onClick={handleTransition}
                           disabled={loading || !selectedNextStage ||
-                            (selectedNextStage === "ASSIGNED" && !!employeesForAssignment && !selectedAssignee) ||
+                            ((selectedNextStage === "ASSIGNED" || (selectedNextStage === "QC_CHECKED" && requiresQCUserAssignment)) && !!employeesForAssignment && !selectedAssignee) ||
                             (selectedNextStage === "CONFIRMED" && !!requiresReplacementInfoForConfirm && (!replacedWith || !confirmedById))
                           }
                         >
@@ -194,10 +208,12 @@ export function AuditableWorkflow({
                             <label className="text-xs font-medium">Confirmed By</label>
                             <Select value={confirmedById} onValueChange={(v) => setConfirmedById(v || "")}>
                               <SelectTrigger className="h-8 text-sm">
-                                <SelectValue placeholder="Select coordinator/manager..." />
+                                <SelectValue placeholder="Select coordinator/manager...">
+                                  {confirmedById ? managersForConfirmation?.find(e => e.id === confirmedById)?.username : "Select coordinator/manager..."}
+                                </SelectValue>
                               </SelectTrigger>
                               <SelectContent>
-                                {employeesForAssignment?.map(emp => (
+                                {managersForConfirmation?.map(emp => (
                                   <SelectItem key={emp.id} value={emp.id}>{emp.username}</SelectItem>
                                 ))}
                               </SelectContent>
@@ -206,11 +222,13 @@ export function AuditableWorkflow({
                         </div>
                       )}
 
-                      {selectedNextStage === "ASSIGNED" && employeesForAssignment && (
+                      {(selectedNextStage === "ASSIGNED" || (selectedNextStage === "QC_CHECKED" && requiresQCUserAssignment)) && employeesForAssignment && (
                         <div className="flex gap-2">
                           <Select value={selectedAssignee} onValueChange={(v) => setSelectedAssignee(v || "")}>
                             <SelectTrigger className="flex-1">
-                              <SelectValue placeholder="Select employee to assign to..." />
+                              <SelectValue placeholder={selectedNextStage === "QC_CHECKED" ? "Select QC employee..." : "Select employee to assign to..."}>
+                                {selectedAssignee ? employeesForAssignment.find(e => e.id === selectedAssignee)?.username : (selectedNextStage === "QC_CHECKED" ? "Select QC employee..." : "Select employee to assign to...")}
+                              </SelectValue>
                             </SelectTrigger>
                             <SelectContent>
                               {employeesForAssignment.map(emp => (
@@ -276,7 +294,7 @@ export function AuditableWorkflow({
                 events.map((event) => (
                   <div key={event.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                     <div className="flex items-center justify-center w-10 h-10 rounded-full border border-background bg-muted text-muted-foreground shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
-                      {event.action.includes("→") ? <ArrowRight className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
+                      {(event.action.includes("→") || event.action.includes("Transitioned")) ? <ArrowRight className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
                     </div>
                     <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-card p-4 rounded border shadow-sm">
                       <div className="flex flex-col gap-1 mb-1">

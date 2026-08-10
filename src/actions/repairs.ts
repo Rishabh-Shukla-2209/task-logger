@@ -37,31 +37,50 @@ export async function createInternalRepair(formData: FormData) {
   })
 
   revalidatePath("/coordinator/repairs")
+  revalidatePath("/manager/repairs")
+  revalidatePath("/director/repairs")
 }
 
-export async function transitionInternalRepair(repairId: string, newStage: string, remark: string) {
+export async function transitionInternalRepair(repairId: string, newStage: string, remark: string, extraData?: { assignedToId?: string }) {
   const session = await getServerSession(authOptions)
   if (!session || session.user.role !== "COORDINATOR") throw new Error("Unauthorized")
 
   const req = await prisma.internalRepair.findUnique({ where: { id: repairId } })
   if (!req) throw new Error("Not found")
 
-  await prisma.internalRepair.update({
-    where: { id: repairId },
-    data: { status: newStage as InternalRepairStatus },
-  })
+  const validStages: InternalRepairStatus[] = ["RECORDED", "CONFIRMED", "SENT_FOR_REPAIR", "RECEIVED_BACK", "QC_CHECKED", "READY", "SCRAPPED", "DROPPED"]
+  if (!validStages.includes(newStage as InternalRepairStatus)) {
+    throw new Error("Invalid stage")
+  }
 
-  await prisma.internalRepairEvent.create({
-    data: {
-      internal_repair_id: repairId,
-      user_id: session.user.id,
-      action: `Transitioned from ${req.status} to ${newStage}`,
-      remark: remark || null,
-    },
-  })
+  let actionString = `Transitioned from ${req.status} to ${newStage}`
+  
+  if (newStage === "QC_CHECKED" && extraData?.assignedToId) {
+    const qcUser = await prisma.user.findUnique({ where: { id: extraData.assignedToId } })
+    if (qcUser) actionString += ` (QC done by: ${qcUser.username})`
+  }
+
+  await prisma.$transaction([
+    prisma.internalRepair.update({
+      where: { id: repairId },
+      data: { status: newStage as InternalRepairStatus },
+    }),
+    prisma.internalRepairEvent.create({
+      data: {
+        internal_repair_id: repairId,
+        user_id: session.user.id,
+        action: actionString,
+        remark: remark || null,
+      },
+    })
+  ])
 
   revalidatePath(`/coordinator/repairs/${repairId}`)
   revalidatePath("/coordinator/repairs")
+  revalidatePath(`/manager/repairs/${repairId}`)
+  revalidatePath("/manager/repairs")
+  revalidatePath(`/director/repairs/${repairId}`)
+  revalidatePath("/director/repairs")
 }
 
 export async function addInternalRepairRemark(repairId: string, remark: string) {
@@ -78,4 +97,37 @@ export async function addInternalRepairRemark(repairId: string, remark: string) 
   })
 
   revalidatePath(`/coordinator/repairs/${repairId}`)
+  revalidatePath("/coordinator/repairs")
+  revalidatePath(`/manager/repairs/${repairId}`)
+  revalidatePath("/manager/repairs")
+  revalidatePath(`/director/repairs/${repairId}`)
+
+  revalidatePath("/director/repairs")
+}
+
+export async function reopenInternalRepair(repairId: string, remark: string) {
+  const session = await getServerSession(authOptions)
+  if (!session || session.user.role !== "COORDINATOR") throw new Error("Unauthorized")
+
+  await prisma.$transaction([
+    prisma.internalRepair.update({
+      where: { id: repairId },
+      data: { status: "RECORDED" },
+    }),
+    prisma.internalRepairEvent.create({
+      data: {
+        internal_repair_id: repairId,
+        user_id: session.user.id,
+        action: `Reopened (Moved back to RECORDED)`,
+        remark: remark || null,
+      },
+    })
+  ])
+
+  revalidatePath(`/coordinator/repairs/${repairId}`)
+  revalidatePath("/coordinator/repairs")
+  revalidatePath(`/manager/repairs/${repairId}`)
+  revalidatePath("/manager/repairs")
+  revalidatePath(`/director/repairs/${repairId}`)
+  revalidatePath("/director/repairs")
 }

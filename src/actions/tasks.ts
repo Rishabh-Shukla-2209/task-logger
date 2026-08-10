@@ -99,9 +99,17 @@ export async function approveTask(taskId: string, approved: boolean) {
     throw new Error("Unauthorized")
   }
 
+  const task = await prisma.task.findUnique({ where: { id: taskId } })
+  if (!task) throw new Error("Task not found")
+
+  let newStatus = approved ? "APPROVED" : "REJECTED"
+  if (!approved && task.assigned_by_id) {
+    newStatus = "PENDING"
+  }
+
   await prisma.task.update({
     where: { id: taskId },
-    data: { status: approved ? "APPROVED" : "REJECTED" },
+    data: { status: newStatus as any },
   })
 
   revalidatePath("/manager")
@@ -158,16 +166,3 @@ export async function assignTaskToEmployee(formData: FormData) {
   revalidatePath("/", "layout")
 }
 
-export async function approveAssignment(assignmentId: string, approved: boolean) {
-  const session = await getServerSession(authOptions)
-  if (!session || session.user.role !== "MANAGER") {
-    throw new Error("Unauthorized")
-  }
-
-  await prisma.task.update({
-    where: { id: assignmentId },
-    data: { status: approved ? "APPROVED" : "PENDING" },
-  })
-
-  revalidatePath("/manager")
-}

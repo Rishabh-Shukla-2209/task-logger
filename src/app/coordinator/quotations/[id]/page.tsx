@@ -6,9 +6,7 @@ import { QuotationsDetailView } from "@/components/shared/views/QuotationsDetail
 export default async function QuotationDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getServerSession(authOptions)
-  if (!session || !["COORDINATOR", "MANAGER", "DIRECTOR"].includes(session.user.role)) redirect("/")
-  
-  const isReadOnly = session.user.role !== "COORDINATOR"
+  if (!session || session.user.role !== "COORDINATOR") redirect("/")
 
-  return <QuotationsDetailView id={id} basePath="/coordinator/quotations" isReadOnly={isReadOnly} />
+  return <QuotationsDetailView id={id} basePath="/coordinator/quotations" isReadOnly={false} />
 }

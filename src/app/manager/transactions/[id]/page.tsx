@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { redirect } from "next/navigation"
+import { redirect, notFound } from "next/navigation"
 import prisma from "@/lib/prisma"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -31,7 +31,7 @@ export default async function TransactionDetailPage({ params }: { params: Promis
   })
 
   if (!tx) {
-    return <div className="text-center py-20">Transaction not found.</div>
+    notFound()
   }
 
   return (

@@ -12,14 +12,18 @@ import { Plus, Loader2 } from "lucide-react"
 export function NewAssignmentDialog({ employees }: { employees: { id: string, username: string }[] }) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLoading(true)
     const formData = new FormData(e.currentTarget)
+    setError(null)
     try {
       await assignTaskToEmployee(formData)
       setOpen(false)
+    } catch (err: any) {
+      setError(err.message || "Failed to assign task")
     } finally {
       setLoading(false)
     }
@@ -57,6 +61,7 @@ export function NewAssignmentDialog({ employees }: { employees: { id: string, us
             <label className="text-sm font-medium">Due Date (optional)</label>
             <Input name="due_date" type="date" />
           </div>
+          {error && <p className="text-sm text-red-500">{error}</p>}
           <Button type="submit" className="w-full" disabled={loading}>
             {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             Assign Task

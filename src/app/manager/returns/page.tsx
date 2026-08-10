@@ -4,13 +4,13 @@ import { redirect } from "next/navigation"
 import prisma from "@/lib/prisma"
 import { TransactionsTable } from "@/components/accountant/TransactionsTable"
 
-export default async function ReturnsPage(props: any) {
-  const searchParams = await props.searchParams || {};
+export default async function ReturnsPage({ searchParams }: { searchParams: Promise<{ start?: string; end?: string }> }) {
+  const resolvedParams = await searchParams || {};
   const session = await getServerSession(authOptions)
   if (!session || session.user.role !== "MANAGER") redirect("/")
 
-  let start = searchParams?.start;
-  let end = searchParams?.end;
+  let start = resolvedParams?.start;
+  let end = resolvedParams?.end;
   if (!start && !end) {
     const now = new Date();
     const pad = (n: number) => n.toString().padStart(2, '0');

@@ -4,18 +4,20 @@ import { redirect } from "next/navigation"
 import prisma from "@/lib/prisma"
 import { TransactionsTable } from "@/components/accountant/TransactionsTable"
 
-export default async function ReturnsPage(props: any) {
-  const searchParams = await props.searchParams || {};
+import { getDefaultDateRange } from "@/lib/dateUtils"
+import { SingleAnalysis } from "@/components/director/SingleAnalysis"
+
+export default async function ReturnsPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | undefined }> }) {
+  const params = await searchParams;
   const session = await getServerSession(authOptions)
   if (!session || session.user.role !== "DIRECTOR") redirect("/")
 
-  let start = searchParams?.start;
-  let end = searchParams?.end;
+  let start = params?.start;
+  let end = params?.end;
   if (!start && !end) {
-    const now = new Date();
-    const pad = (n: number) => n.toString().padStart(2, '0');
-    start = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-01`;
-    end = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const defaultRange = getDefaultDateRange();
+    start = defaultRange.start;
+    end = defaultRange.end;
   }
 
   const where: any = { type: "RETURN" };
@@ -50,6 +52,7 @@ export default async function ReturnsPage(props: any) {
       basePath="/director"
       startDate={start}
       endDate={end}
+      analysisComponent={<SingleAnalysis type="RETURN" />}
     />
   )
 }

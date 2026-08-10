@@ -9,14 +9,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Eye } from "lucide-react"
 import Link from "next/link"
 
-export default async function ManagerFollowupsPage({ searchParams }: { searchParams: { status?: string } }) {
+export default async function ManagerFollowupsPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
   const session = await getServerSession(authOptions)
 
   if (!session || session.user.role !== "MANAGER") {
     redirect("/")
   }
 
-  const currentStatus = searchParams.status === "RESOLVED" ? "RESOLVED" : "ACTIVE"
+  const resolvedParams = await searchParams;
+  const currentStatus = resolvedParams.status === "RESOLVED" ? "RESOLVED" : "ACTIVE"
 
   const followups = await prisma.paymentFollowup.findMany({
     where: { status: currentStatus },

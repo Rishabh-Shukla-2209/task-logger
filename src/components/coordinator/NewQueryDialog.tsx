@@ -23,6 +23,7 @@ const QUERY_TYPES = [
 export function NewQueryDialog({ createAction }: { createAction: (formData: FormData) => Promise<void> }) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [queryType, setQueryType] = useState<string>("")
 
   const handleSubmit = async (formData: FormData) => {
     setLoading(true)
@@ -53,7 +54,7 @@ export function NewQueryDialog({ createAction }: { createAction: (formData: Form
 
           <div className="space-y-2">
             <label className="text-sm font-medium">Query Type</label>
-            <Select name="query_type" required>
+            <Select name="query_type" onValueChange={(v: string | null) => setQueryType(v || "")} required>
               <SelectTrigger>
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
@@ -70,10 +71,12 @@ export function NewQueryDialog({ createAction }: { createAction: (formData: Form
             <Input name="device_details" placeholder="e.g. Dell 7400 i5 8GB" />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Replacement Reason (if applicable)</label>
-            <Textarea name="replacement_reason" placeholder="Why is replacement needed?" rows={2} />
-          </div>
+          {(queryType === "SALE_REPLACEMENT" || queryType === "RENT_REPLACEMENT" || queryType === "SALE_REPAIR" || queryType === "RENT_REPAIR") && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Reason</label>
+              <Textarea name="replacement_reason" placeholder="Why is this requested?" rows={2} required />
+            </div>
+          )}
 
           <Button type="submit" className="w-full" disabled={loading}>
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
