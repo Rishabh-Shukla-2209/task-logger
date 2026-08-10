@@ -32,14 +32,10 @@ export default async function ManagerPage() {
     const loggedTasksCount = await prisma.task.count({
       where: { user_id: emp.id, status: "LOGGED" },
     })
-    
-    const completedAssignmentsCount = await prisma.taskAssignment.count({
-      where: { assigned_to_id: emp.id, status: "COMPLETED" },
-    })
 
     return {
       ...emp,
-      pendingCount: loggedTasksCount + completedAssignmentsCount
+      pendingCount: loggedTasksCount
     }
   }))
 

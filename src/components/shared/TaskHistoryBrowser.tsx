@@ -11,8 +11,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { CalendarIcon, Search, Loader2 } from "lucide-react"
-import { format } from "date-fns"
+import { format, startOfDay, endOfDay, subDays } from "date-fns"
 import { Badge } from "@/components/ui/badge"
+import { toast } from "sonner"
 
 interface Task {
   id: string
@@ -21,7 +22,7 @@ interface Task {
   status: string
   remark: string | null
   manager_edit: string | null
-  log_date: Date
+  log_date: Date | null
 }
 
 interface GroupedTasks {
@@ -35,6 +36,8 @@ export function TaskHistoryBrowser({ userId = "self", status }: { userId?: strin
   const [debouncedQuery, setDebouncedQuery] = useState("")
   const [startDate, setStartDate] = useState<Date | undefined>(undefined)
   const [endDate, setEndDate] = useState<Date | undefined>(undefined)
+  const [appliedStartDate, setAppliedStartDate] = useState<Date | undefined>(undefined)
+  const [appliedEndDate, setAppliedEndDate] = useState<Date | undefined>(undefined)
   const [offset, setOffset] = useState(0)
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
@@ -47,6 +50,9 @@ export function TaskHistoryBrowser({ userId = "self", status }: { userId?: strin
 
   const loadTasks = useCallback(async (isLoadMore = false) => {
     setLoading(true)
+    if (!isLoadMore) {
+      setGroupedTasks([])
+    }
     try {
       const currentOffset = isLoadMore ? offset + 7 : 0
       if (!isLoadMore) {
@@ -55,13 +61,28 @@ export function TaskHistoryBrowser({ userId = "self", status }: { userId?: strin
         setOffset(currentOffset)
       }
 
+      let finalStartDate = appliedStartDate
+      let finalEndDate = appliedEndDate
+
+      if (!finalStartDate || !finalEndDate) {
+        const now = new Date()
+        const end = subDays(now, currentOffset)
+        const start = subDays(end, 6)
+        finalEndDate = endOfDay(end)
+        finalStartDate = startOfDay(start)
+      } else {
+        finalStartDate = startOfDay(finalStartDate)
+        finalEndDate = endOfDay(finalEndDate)
+      }
+
       const res = await fetchTaskHistory({
         userId,
         searchQuery: debouncedQuery,
         status,
-        startDate,
-        endDate,
+        startDate: finalStartDate,
+        endDate: finalEndDate,
         offset: currentOffset,
+        tzOffset: new Date().getTimezoneOffset(),
       })
 
       if (isLoadMore) {
@@ -89,11 +110,31 @@ export function TaskHistoryBrowser({ userId = "self", status }: { userId?: strin
     } finally {
       setLoading(false)
     }
-  }, [userId, debouncedQuery, status, startDate, endDate, offset])
+  }, [userId, debouncedQuery, status, appliedStartDate, appliedEndDate, offset])
 
   useEffect(() => {
     loadTasks(false)
-  }, [debouncedQuery, startDate, endDate])
+  }, [debouncedQuery, appliedStartDate, appliedEndDate])
+
+  const handleFilter = () => {
+    if ((startDate && !endDate) || (!startDate && endDate)) {
+      toast.error("Please select both start and end dates.")
+      return
+    }
+    if (startDate && endDate && endDate < startDate) {
+      toast.error("End date cannot be earlier than start date.")
+      return
+    }
+    setAppliedStartDate(startDate)
+    setAppliedEndDate(endDate)
+  }
+
+  const handleClear = () => {
+    setStartDate(undefined)
+    setEndDate(undefined)
+    setAppliedStartDate(undefined)
+    setAppliedEndDate(undefined)
+  }
 
   const getStatusColor = (status: string) => {
     switch(status) {
@@ -136,12 +177,18 @@ export function TaskHistoryBrowser({ userId = "self", status }: { userId?: strin
             </PopoverContent>
           </Popover>
           {(startDate || endDate) && (
-            <Button variant="ghost" onClick={() => { setStartDate(undefined); setEndDate(undefined); }}>Clear</Button>
+            <Button variant="ghost" onClick={handleClear} className="cursor-pointer">Clear</Button>
           )}
+          <Button onClick={handleFilter} disabled={!startDate && !endDate} className="cursor-pointer">Go</Button>
         </div>
       </div>
 
       <div className="space-y-8">
+        {groupedTasks.length === 0 && loading && (
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        )}
         {groupedTasks.length === 0 && !loading && (
           <div className="text-center py-12 text-muted-foreground">No tasks found.</div>
         )}

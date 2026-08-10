@@ -25,9 +25,10 @@ export default async function CoordinatorTasksPage() {
   })
 
   // Pending Manager Assignments
-  const pendingAssignments = await prisma.taskAssignment.findMany({
+  const pendingAssignments = await prisma.task.findMany({
     where: {
-      assigned_to_id: session.user.id,
+      user_id: session.user.id,
+      assigned_by_id: { not: null },
       status: "PENDING"
     },
     include: {
@@ -59,7 +60,7 @@ export default async function CoordinatorTasksPage() {
                   
                   <div className="flex justify-between items-start mb-2">
                     <span className="text-sm text-muted-foreground">
-                      {new Date(task.log_date).toLocaleDateString()}
+                      {task.log_date ? new Date(task.log_date).toLocaleDateString() : '-'}
                     </span>
                     <Badge variant="secondary">
                       {task.status}

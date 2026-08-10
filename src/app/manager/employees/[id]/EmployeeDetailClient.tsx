@@ -26,20 +26,13 @@ interface SerializedTask {
   status: string
   manager_edit: string | null
   log_date: string
-}
-
-interface SerializedAssignment {
-  id: string
-  description: string
-  status: string
-  due_date: string | null
+  is_assignment: boolean
 }
 
 interface EmployeeWithTasks {
   id: string
   username: string
   loggedTasks: SerializedTask[]
-  completedAssignments: SerializedAssignment[]
 }
 
 export function EmployeeDetailClient({ employee: initialEmployee }: { employee: EmployeeWithTasks }) {
@@ -52,25 +45,12 @@ export function EmployeeDetailClient({ employee: initialEmployee }: { employee: 
   const handleApprove = async (id: string, approved: boolean, isAssignment = false) => {
     setLoadingId(id)
     try {
-      if (isAssignment) {
-        await approveAssignment(id, approved)
-      } else {
-        await approveTask(id, approved)
-      }
+      await approveTask(id, approved)
       
-      setEmployee(prev => {
-        if (isAssignment) {
-          return {
-            ...prev,
-            completedAssignments: prev.completedAssignments.filter(a => a.id !== id)
-          }
-        } else {
-          return {
-            ...prev,
-            loggedTasks: prev.loggedTasks.filter(t => t.id !== id)
-          }
-        }
-      })
+      setEmployee(prev => ({
+        ...prev,
+        loggedTasks: prev.loggedTasks.filter(t => t.id !== id)
+      }))
       router.refresh()
     } finally {
       setLoadingId(null)
@@ -177,47 +157,6 @@ export function EmployeeDetailClient({ employee: initialEmployee }: { employee: 
                           <Edit className="w-3 h-3 mr-1" /> Edit
                         </Button>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-4 pt-4 border-t">
-            <h4 className="text-lg font-semibold">Completed Assignments ({employee.completedAssignments.length})</h4>
-            {employee.completedAssignments.length === 0 ? (
-              <p className="text-muted-foreground">No assignments awaiting approval.</p>
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {employee.completedAssignments.map(assignment => (
-                  <Card key={assignment.id} className="border-indigo-200 bg-indigo-50/30">
-                    <CardContent className="pt-6">
-                      <div className="flex justify-between items-start mb-2">
-                        <Badge variant="outline" className="border-indigo-300 text-indigo-700">COMPLETED</Badge>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-100"
-                            onClick={() => handleApprove(assignment.id, true, true)}
-                            disabled={loadingId === assignment.id}
-                          >
-                            {loadingId === assignment.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-amber-600 hover:text-amber-700 hover:bg-amber-100"
-                            title="Reject (Return to Pending)"
-                            onClick={() => handleApprove(assignment.id, false, true)}
-                            disabled={loadingId === assignment.id}
-                          >
-                            <RotateCcw className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                      <p className="text-sm font-medium whitespace-pre-wrap">{assignment.description}</p>
                     </CardContent>
                   </Card>
                 ))}

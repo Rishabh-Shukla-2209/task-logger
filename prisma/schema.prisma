@@ -29,12 +29,7 @@ enum TaskStatus {
   LOGGED
   APPROVED
   REJECTED
-}
-
-enum TaskAssignmentStatus {
   PENDING
-  COMPLETED
-  APPROVED
 }
 
 enum QueryType {
@@ -127,9 +122,8 @@ model User {
   updated_at     DateTime  @updatedAt
 
   // Relations
-  Tasks             Task[]
-  TaskAssignmentsBy TaskAssignment[] @relation("AssignedBy")
-  TaskAssignmentsTo TaskAssignment[] @relation("AssignedTo")
+  Tasks             Task[]           @relation("TaskOwner")
+  AssignedTasks     Task[]           @relation("AssignedBy")
   EditedTasks       Task[]           @relation("EditedBy")
 
   QueryEvents            QueryEvent[]
@@ -158,12 +152,17 @@ model User {
 model Task {
   id                 String     @id @default(uuid())
   user_id            String
-  user               User       @relation(fields: [user_id], references: [id])
-  log_date           DateTime   @db.Date
+  user               User       @relation("TaskOwner", fields: [user_id], references: [id])
+  log_date           DateTime?  @db.Date
+  due_date           DateTime?  @db.Date
   description        String
   time_taken_minutes Int?
   remark             String?
   status             TaskStatus @default(LOGGED)
+
+  // Assignment details
+  assigned_by_id String?
+  assigned_by    User?     @relation("AssignedBy", fields: [assigned_by_id], references: [id])
 
   // Manager audit trail
   manager_edit String?
@@ -173,19 +172,6 @@ model Task {
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
-}
-
-model TaskAssignment {
-  id             String               @id @default(uuid())
-  assigned_by_id String
-  assigned_by    User                 @relation("AssignedBy", fields: [assigned_by_id], references: [id])
-  assigned_to_id String
-  assigned_to    User                 @relation("AssignedTo", fields: [assigned_to_id], references: [id])
-  description    String
-  due_date       DateTime?            @db.Date
-  status         TaskAssignmentStatus @default(PENDING)
-  created_at     DateTime             @default(now())
-  updated_at     DateTime             @updatedAt
 }
 
 // ─── ENTITIES ───────────────────────────────────────────

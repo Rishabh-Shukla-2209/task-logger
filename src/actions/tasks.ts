@@ -79,12 +79,15 @@ export async function completeAssignedTask(assignmentId: string) {
     throw new Error("Unauthorized")
   }
 
-  await prisma.taskAssignment.update({
+  await prisma.task.update({
     where: {
       id: assignmentId,
-      assigned_to_id: session.user.id
+      user_id: session.user.id
     },
-    data: { status: "COMPLETED" },
+    data: { 
+      status: "LOGGED",
+      log_date: new Date()
+    },
   })
 
   revalidatePath("/", "layout")
@@ -142,12 +145,13 @@ export async function assignTaskToEmployee(formData: FormData) {
     throw new Error("Missing fields")
   }
 
-  await prisma.taskAssignment.create({
+  await prisma.task.create({
     data: {
+      user_id: assignedToId,
       assigned_by_id: session.user.id,
-      assigned_to_id: assignedToId,
       description,
       due_date: dueDate ? new Date(dueDate) : null,
+      status: "PENDING",
     },
   })
 
@@ -160,7 +164,7 @@ export async function approveAssignment(assignmentId: string, approved: boolean)
     throw new Error("Unauthorized")
   }
 
-  await prisma.taskAssignment.update({
+  await prisma.task.update({
     where: { id: assignmentId },
     data: { status: approved ? "APPROVED" : "PENDING" },
   })
