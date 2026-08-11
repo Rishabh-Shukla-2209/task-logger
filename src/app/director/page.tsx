@@ -12,8 +12,8 @@ export default async function DirectorPage() {
   if (!session || session.user.role !== "DIRECTOR") redirect("/")
 
   const employees = await prisma.user.findMany({
-    where: { role: "EMPLOYEE", is_active: true },
-    select: { id: true, username: true },
+    where: { role: { notIn: ["DIRECTOR", "SUPERUSER"] }, is_active: true },
+    select: { id: true, username: true, role: true },
     orderBy: { username: "asc" },
     take: 5
   })
@@ -48,7 +48,7 @@ export default async function DirectorPage() {
                     </div>
                     <div>
                       <h4 className="font-semibold text-lg">{emp.username}</h4>
-                      <p className="text-sm text-muted-foreground">Employee</p>
+                      <p className="text-sm text-muted-foreground">{emp.role}</p>
                     </div>
                   </div>
                 </CardContent>

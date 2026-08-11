@@ -35,8 +35,8 @@ export async function addTask(formData: FormData) {
 
 export async function editTaskByEmployee(taskId: string, formData: FormData) {
   const session = await getServerSession(authOptions)
-  const allowedRoles = ["EMPLOYEE", "ACCOUNTANT", "COORDINATOR"]
-  if (!session || !allowedRoles.includes(session.user.role)) {
+  const excludedRoles = ["MANAGER", "DIRECTOR", "SUPERUSER"]
+  if (!session || excludedRoles.includes(session.user.role)) {
     throw new Error("Unauthorized")
   }
 
@@ -74,8 +74,8 @@ export async function editTaskByEmployee(taskId: string, formData: FormData) {
 
 export async function completeAssignedTask(assignmentId: string) {
   const session = await getServerSession(authOptions)
-  const allowedRoles = ["EMPLOYEE", "ACCOUNTANT", "COORDINATOR"]
-  if (!session || !allowedRoles.includes(session.user.role)) {
+  const excludedRoles = ["MANAGER", "DIRECTOR", "SUPERUSER"]
+  if (!session || excludedRoles.includes(session.user.role)) {
     throw new Error("Unauthorized")
   }
 

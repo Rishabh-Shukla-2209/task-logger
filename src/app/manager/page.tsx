@@ -18,7 +18,7 @@ export default async function ManagerPage() {
 
   // Fetch employees
   const employees = await prisma.user.findMany({
-    where: { role: { in: ["EMPLOYEE", "ACCOUNTANT", "COORDINATOR"] }, is_active: true },
+    where: { role: { notIn: ["MANAGER", "DIRECTOR", "SUPERUSER"] }, is_active: true },
     select: { id: true, username: true, role: true },
     orderBy: { username: "asc" },
   })
