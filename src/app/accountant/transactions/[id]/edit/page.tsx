@@ -19,13 +19,22 @@ export default async function EditTransactionPage({ params }: { params: Promise<
     }
   })
 
-  if (!transaction) {
+  if (!transaction || transaction.is_deleted) {
     return <div className="text-center py-20">Transaction not found.</div>
   }
 
-  const customers = await prisma.customer.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } })
-  const suppliers = await prisma.supplier.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } })
-  const employees = await prisma.user.findMany({ select: { id: true, username: true }, orderBy: { username: "asc" } })
+  const { fetchAllOptions } = await import("@/actions/option-actions")
+  
+  const [customers, suppliers, employees, options] = await Promise.all([
+    prisma.customer.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    prisma.supplier.findMany({ select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    prisma.user.findMany({ 
+      where: { role: { not: "SUPERUSER" }, is_active: true },
+      select: { id: true, username: true }, 
+      orderBy: { username: "asc" } 
+    }),
+    fetchAllOptions()
+  ])
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -36,7 +45,8 @@ export default async function EditTransactionPage({ params }: { params: Promise<
         suppliers={suppliers}
         employees={employees}
         transaction={transaction}
-        readOnlyCore={session.user.role === "ACCOUNTANT" && transaction.type !== "SALE"}
+        basePath="/accountant/transactions"
+        options={options}
       />
     </div>
   )

@@ -40,7 +40,7 @@ export async function RepairsDetailView({
   if (!req) redirect(basePath)
 
   const employees = await prisma.user.findMany({
-    where: { role: { in: ["EMPLOYEE", "COORDINATOR", "MANAGER"] } },
+    where: { role: { in: ["EMPLOYEE", "COORDINATOR", "MANAGER"] }, is_active: true },
     select: { id: true, username: true },
     orderBy: { username: "asc" }
   })

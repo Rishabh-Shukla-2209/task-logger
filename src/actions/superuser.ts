@@ -102,3 +102,19 @@ export async function resetUserPassword(userId: string, newPasswordRaw: string) 
 
   revalidatePath("/superuser")
 }
+
+export async function deleteUser(userId: string) {
+  await ensureSuperuser()
+  
+  try {
+    await prisma.user.delete({
+      where: { id: userId }
+    })
+    revalidatePath("/superuser")
+  } catch (error: any) {
+    if (error.code === 'P2003') {
+      throw new Error("This user has associated records (tasks, queries, etc) and cannot be permanently deleted. Please deactivate them instead.")
+    }
+    throw error
+  }
+}

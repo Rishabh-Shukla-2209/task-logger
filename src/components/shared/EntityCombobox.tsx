@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useState, useEffect, useRef } from 'react'
 import { handleError } from "@/lib/errorHandler"
-import { searchCustomers, createCustomer } from '@/actions/customer-actions'
+import { searchCustomers, createCustomer, fetchUsers } from '@/actions/customer-actions'
 import { searchSuppliers, createSupplier } from '@/actions/supplier-actions'
 import { SupplierType } from '@prisma/client'
 import { Input } from '@/components/ui/input'
@@ -12,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Loader2, Check, Plus, Search } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 type EntityType = 'customer' | 'supplier'
 
@@ -34,7 +35,18 @@ export function EntityCombobox({ type, supplierType, value, onChange, placeholde
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [newName, setNewName] = useState('')
   const [newExtra, setNewExtra] = useState('') // phone or contact
+  const [newLocation, setNewLocation] = useState('') // location for customer
+  const [newUserId, setNewUserId] = useState('') // mandatory salesperson
   const [creating, setCreating] = useState(false)
+  
+  const [users, setUsers] = useState<any[]>([])
+  
+  // Fetch users when dialog opens
+  useEffect(() => {
+    if (createDialogOpen && type === 'customer' && users.length === 0) {
+      fetchUsers().then(setUsers).catch(console.error)
+    }
+  }, [createDialogOpen, type, users.length])
 
   // Debounce logic
   useEffect(() => {
@@ -88,7 +100,7 @@ export function EntityCombobox({ type, supplierType, value, onChange, placeholde
     try {
       let created;
       if (type === 'customer') {
-        created = await createCustomer({ name: newName, phone: newExtra })
+        created = await createCustomer({ name: newName, phone: newExtra, location: newLocation, user_id: newUserId })
       } else {
         created = await createSupplier({ name: newName, contact: newExtra, type: supplierType || 'BOTH' })
       }
@@ -99,6 +111,8 @@ export function EntityCombobox({ type, supplierType, value, onChange, placeholde
       setQuery('')
       setNewName('')
       setNewExtra('')
+      setNewLocation('')
+      setNewUserId('')
     } catch (err) {
       handleError(err, `Failed to create ${type}`)
     }
@@ -153,9 +167,9 @@ export function EntityCombobox({ type, supplierType, value, onChange, placeholde
                   </span>
                   <div className="flex flex-col">
                     <span>{item.name}</span>
-                    {(item.phone || item.contact || item.address) && (
+                    {(item.phone || item.contact || item.address || item.location) && (
                       <span className="text-xs text-muted-foreground truncate max-w-[220px]">
-                        {item.phone || item.contact} {item.address ? `- ${item.address}` : ''}
+                        {item.phone || item.contact} {item.address ? `- ${item.address}` : ''} {item.location ? `(${item.location})` : ''}
                       </span>
                     )}
                   </div>
@@ -199,10 +213,31 @@ export function EntityCombobox({ type, supplierType, value, onChange, placeholde
               <Label>{type === 'customer' ? 'Phone' : 'Contact Person / Phone'}</Label>
               <Input value={newExtra} onChange={e => setNewExtra(e.target.value)} placeholder="Optional" />
             </div>
+            {type === 'customer' && (
+              <>
+                <div className="space-y-2">
+                  <Label>Location</Label>
+                  <Input value={newLocation} onChange={e => setNewLocation(e.target.value)} placeholder="City / Area (Optional)" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Salesperson <span className="text-red-500">*</span></Label>
+                  <Select value={newUserId} onValueChange={(v: any) => setNewUserId(v)}>
+                    <SelectTrigger><SelectValue placeholder="Select Salesperson" /></SelectTrigger>
+                    <SelectContent>
+                      {users.map(u => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.username}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateDialogOpen(false)} disabled={creating}>Cancel</Button>
-            <Button onClick={handleCreate} disabled={creating || !newName.trim()}>
+            <Button onClick={handleCreate} disabled={creating || !newName.trim() || (type === 'customer' && !newUserId)}>
               {creating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Create
             </Button>

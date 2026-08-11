@@ -19,16 +19,29 @@ export async function getSalesAnalysis(
   await checkAccess()
 
   const transactions = await prisma.transaction.findMany({
-    where: {
+    where: { is_deleted: false,
       type: "SALE",
       ...(startDate && endDate ? { created_at: { gte: startDate, lte: endDate } } : {}),
       ...(groupBy === "pending_payment" ? { pending_amount: { gt: 0 } } : {})
     },
-    include: {
-      customer: true,
-      salesperson: true,
-      supplier: true,
-      LineItems: true
+    select: {
+      pending_amount: true,
+      total_value: true,
+      customer: { select: { name: true } },
+      salesperson: { select: { username: true } },
+      supplier: { select: { name: true } },
+      LineItems: {
+        select: {
+          type: true,
+          quantity: true,
+          serial_numbers: true,
+          total_price: true,
+          item_model: true,
+          processor: true,
+          generation: true,
+          category: true,
+        }
+      }
     }
   })
 
@@ -84,16 +97,37 @@ export async function getSalesAnalysisDetails(
   await checkAccess()
 
   const transactions = await prisma.transaction.findMany({
-    where: {
+    where: { is_deleted: false,
       type: "SALE",
       ...(startDate && endDate ? { created_at: { gte: startDate, lte: endDate } } : {}),
       ...(groupBy === "pending_payment" ? { pending_amount: { gt: 0 } } : {})
     },
-    include: {
-      customer: true,
-      salesperson: true,
-      supplier: true,
-      LineItems: true
+    select: {
+      id: true,
+      created_at: true,
+      pending_amount: true,
+      payment_status: true,
+      payment_account: true,
+      customer: { select: { name: true } },
+      salesperson: { select: { username: true } },
+      supplier: { select: { name: true } },
+      LineItems: {
+        select: {
+          type: true,
+          quantity: true,
+          serial_numbers: true,
+          item_model: true,
+          processor: true,
+          generation: true,
+          category: true,
+          make: true,
+          bundle_name: true,
+          ram_gb: true,
+          ssd_gb: true,
+          price_per_unit: true,
+          total_price: true,
+        }
+      }
     }
   })
 
@@ -205,13 +239,24 @@ export async function getPurchaseAnalysis(
   await checkAccess()
 
   const transactions = await prisma.transaction.findMany({
-    where: {
+    where: { is_deleted: false,
       type: "PURCHASE",
       ...(startDate && endDate ? { created_at: { gte: startDate, lte: endDate } } : {})
     },
-    include: {
-      supplier: true,
-      LineItems: true
+    select: {
+      total_value: true,
+      supplier: { select: { name: true } },
+      LineItems: {
+        select: {
+          quantity: true,
+          serial_numbers: true,
+          category: true,
+          item_model: true,
+          processor: true,
+          generation: true,
+          total_price: true,
+        }
+      }
     }
   })
 
@@ -256,13 +301,21 @@ export async function getReplacementAnalysis(
   await checkAccess()
 
   const transactions = await prisma.transaction.findMany({
-    where: {
+    where: { is_deleted: false,
       type: "REPLACEMENT",
       ...(startDate && endDate ? { created_at: { gte: startDate, lte: endDate } } : {})
     },
-    include: {
-      customer: true,
-      LineItems: true
+    select: {
+      total_value: true,
+      customer: { select: { name: true } },
+      LineItems: {
+        select: {
+          quantity: true,
+          serial_numbers: true,
+          item_model: true,
+          total_price: true,
+        }
+      }
     }
   })
 
@@ -297,13 +350,26 @@ export async function getRepairAnalysis(startDate?: Date, endDate?: Date) {
   await checkAccess()
 
   const transactions = await prisma.transaction.findMany({
-    where: {
+    where: { is_deleted: false,
       type: "REPAIR",
       ...(startDate && endDate ? { created_at: { gte: startDate, lte: endDate } } : {})
     },
-    include: {
-      customer: true,
-      LineItems: true
+    select: {
+      id: true,
+      created_at: true,
+      remark: true,
+      customer: { select: { name: true } },
+      LineItems: {
+        select: {
+          id: true,
+          category: true,
+          item_model: true,
+          defect: true,
+          quantity: true,
+          serial_numbers: true,
+          total_price: true,
+        }
+      }
     },
     orderBy: { created_at: 'desc' }
   })
@@ -334,13 +400,20 @@ export async function getRentAnalysis(
 ) {
   await checkAccess()
   const transactions = await prisma.transaction.findMany({
-    where: {
+    where: { is_deleted: false,
       type: "RENT",
       ...(startDate && endDate ? { created_at: { gte: startDate, lte: endDate } } : {})
     },
-    include: {
-      customer: true,
-      LineItems: true
+    select: {
+      total_value: true,
+      customer: { select: { name: true } },
+      LineItems: {
+        select: {
+          type: true,
+          serial_numbers: true,
+          quantity: true,
+        }
+      }
     }
   })
 
@@ -365,14 +438,20 @@ export async function getReturnAnalysis(
 ) {
   await checkAccess()
   const transactions = await prisma.transaction.findMany({
-    where: {
+    where: { is_deleted: false,
       type: "RETURN",
       ...(startDate && endDate ? { created_at: { gte: startDate, lte: endDate } } : {})
     },
-    include: {
-      customer: true,
-      supplier: true,
-      LineItems: true
+    select: {
+      return_type: true,
+      total_value: true,
+      LineItems: {
+        select: {
+          type: true,
+          serial_numbers: true,
+          quantity: true,
+        }
+      }
     }
   })
 

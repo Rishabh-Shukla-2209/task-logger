@@ -121,10 +121,28 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+
   html {
     @apply font-sans;
   }
+}
+
+/* Center and enlarge the NextTopLoader spinner */
+#nprogress .spinner {
+  top: 50% !important;
+  right: 50% !important;
+  transform: translate(50%, -50%) !important;
+  z-index: 9999 !important;
+}
+
+#nprogress .spinner-icon {
+  width: 48px !important;
+  height: 48px !important;
+  border-width: 4px !important;
+  border-top-color: #2563eb !important;
+  border-left-color: #2563eb !important;
 }

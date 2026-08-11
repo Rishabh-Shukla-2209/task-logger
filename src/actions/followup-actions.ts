@@ -72,6 +72,10 @@ export async function addFollowupEvent(formData: FormData) {
         previousAmount = currentFollowup.pending_amount;
         const newAmount = previousAmount + amountChange;
         
+        if (newAmount < 0) {
+          throw new Error("Amount cannot go below zero");
+        }
+
         await tx.paymentFollowup.update({
           where: { id: followupId },
           data: { 

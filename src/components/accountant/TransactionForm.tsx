@@ -29,7 +29,8 @@ export function TransactionForm({
   employees,
   transaction,
   readOnlyCore,
-  basePath
+  basePath,
+  options
 }: {
   defaultType: TransactionType
   customers: Customer[]
@@ -38,6 +39,7 @@ export function TransactionForm({
   transaction?: any
   readOnlyCore?: boolean
   basePath?: string
+  options?: any
 }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -310,6 +312,7 @@ export function TransactionForm({
               updateLineItem={updateLineItem} 
               removeLineItem={removeLineItem}
               readOnly={readOnlyCore}
+              options={options}
             />
           ))}
         </CardContent>

@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Trash2 } from "lucide-react"
 import { LineItemPayload } from "@/actions/accounting"
 import { TransactionType } from "@prisma/client"
+import { EntityCombobox } from "@/components/shared/EntityCombobox"
+import { OptionCombobox } from "@/components/shared/OptionCombobox"
 
 type Props = {
   item: LineItemPayload
@@ -15,28 +17,45 @@ type Props = {
   updateLineItem: (index: number, updates: Partial<LineItemPayload>) => void
   removeLineItem: (index: number) => void
   readOnly?: boolean
+  options?: any
 }
 
-const CATEGORIES = ["Laptop", "Desktop", "TFT", "Printer", "RAM", "SSD", "HDD", "Peripheral", "Other"]
-const GENERATIONS = ["NA", "1st Gen", "2nd Gen", "3rd Gen", "4th Gen", "5th Gen", "6th Gen", "7th Gen", "8th Gen", "9th Gen", "10th Gen", "11th Gen", "12th Gen", "13th Gen", "14th Gen"]
-const PROCESSORS = ["NA", "Intel Core i3", "Intel Core i5", "Intel Core i7", "Intel Core i9", "AMD Ryzen 3", "AMD Ryzen 5", "AMD Ryzen 7", "AMD Ryzen 9", "Apple M1", "Apple M2", "Apple M3"]
-const DESKTOP_TYPES = ["NA", "Tiny", "SFF", "Flat", "Tower", "All-in-One"]
-const RAM_TYPES = ["NA", "DDR3", "DDR4", "DDR5"]
-const STORAGE_TYPES = ["NA", "SATA", "M.2 SATA", "NVMe PCIe"]
-
-export function LineItemRow({ item, index, transactionType, updateLineItem, removeLineItem, readOnly }: Props) {
+export function LineItemRow({ item, index, transactionType, updateLineItem, removeLineItem, readOnly, options = {} }: Props) {
   const isRepair = transactionType === "REPAIR"
   const isReplacement = transactionType === "REPLACEMENT"
 
   const cat = item.category || ""
-  const isLaptop = cat === "Laptop"
-  const isDesktop = cat === "Desktop"
-  const isTFT = cat === "TFT"
-  const isRAM = cat === "RAM"
-  const isSSD = cat === "SSD"
-  const isHDD = cat === "HDD"
-  const isPrinter = cat === "Printer"
-  const isPeripheral = cat === "Peripheral"
+  const categoryOption = options.categories?.find((c: any) => c.value === cat)
+  const fg = categoryOption?.field_group
+
+  const isCompute = fg === "COMPUTE" || fg === "COMPUTE_DESKTOP"
+  const isDesktop = fg === "COMPUTE_DESKTOP"
+  const isDisplay = fg === "DISPLAY"
+  const isRAM = fg === "STORAGE_RAM"
+  const isDisk = fg === "STORAGE_DISK"
+  const isPrinter = fg === "PRINTER"
+  const isPeripheral = fg === "PERIPHERAL"
+
+  // Backward compatibility checks for missing field groups
+  const isLaptopCompat = !fg && cat === "Laptop"
+  const isDesktopCompat = !fg && cat === "Desktop"
+  const isTFTCompat = !fg && cat === "TFT"
+  const isRAMCompat = !fg && cat === "RAM"
+  const isSSDCompat = !fg && cat === "SSD"
+  const isHDDCompat = !fg && cat === "HDD"
+  const isPrinterCompat = !fg && cat === "Printer"
+  const isPeripheralCompat = !fg && cat === "Peripheral"
+
+  const showMake = isCompute || isDisplay || isRAM || isDisk || isPrinter || isPeripheral || isLaptopCompat || isDesktopCompat || isTFTCompat || isRAMCompat || isSSDCompat || isHDDCompat || isPrinterCompat || isPeripheralCompat
+  const showModel = isCompute || isDisplay || isPrinter || isLaptopCompat || isDesktopCompat || isTFTCompat || isPrinterCompat
+  const showComputeFields = isCompute || isLaptopCompat || isDesktopCompat
+  const showDesktopType = isDesktop || isDesktopCompat
+  const showScreenSize = isDisplay || isTFTCompat
+  const showStorageFields = isRAM || isDisk || isRAMCompat || isSSDCompat || isHDDCompat
+  const showRamType = isRAM || isRAMCompat
+  const showStorageType = isDisk || isSSDCompat
+  const showPeripheralItem = isPeripheral || isPeripheralCompat
+  const showMisNumbers = isCompute || isDisplay || isLaptopCompat || isDesktopCompat || isTFTCompat
 
   return (
     <div className="border p-4 rounded-md relative bg-muted/10">
@@ -61,9 +80,13 @@ export function LineItemRow({ item, index, transactionType, updateLineItem, remo
       <div className="grid gap-4 md:grid-cols-4">
         {item.type === "BUNDLE" ? (
           <>
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-2">
               <Label>Bundle Name</Label>
               <Input value={item.bundle_name || ""} onChange={e => updateLineItem(index, { bundle_name: e.target.value })} required readOnly={readOnly} />
+            </div>
+            <div className="space-y-2">
+              <Label>Supplier</Label>
+              <EntityCombobox type="supplier" value={item.supplier_id || ""} onChange={(v) => updateLineItem(index, { supplier_id: v })} disabled={readOnly} />
             </div>
             <div className="space-y-2">
               <Label>Quantity</Label>
@@ -95,48 +118,69 @@ export function LineItemRow({ item, index, transactionType, updateLineItem, remo
           <>
             <div className="space-y-2">
               <Label>Category</Label>
-              <Select disabled={readOnly} value={item.category || undefined} onValueChange={(v) => updateLineItem(index, { category: v || undefined })}>
-                <SelectTrigger><SelectValue placeholder="Select Type" /></SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <OptionCombobox 
+                type="CATEGORY" 
+                value={item.category || ""} 
+                onChange={(v) => updateLineItem(index, { category: v || undefined })} 
+                options={options.categories} 
+                disabled={readOnly} 
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Supplier</Label>
+              <EntityCombobox type="supplier" value={item.supplier_id || ""} onChange={(v) => updateLineItem(index, { supplier_id: v })} disabled={readOnly} />
             </div>
             
             {/* Dynamic Fields based on Category */}
-            {(isLaptop || isDesktop || isTFT || isRAM || isSSD || isHDD || isPrinter || isPeripheral) && (
+            {showMake && (
               <div className="space-y-2">
                 <Label>Make (Brand)</Label>
-                <Input value={item.make || ""} onChange={e => updateLineItem(index, { make: e.target.value })} required readOnly={readOnly} />
+                <OptionCombobox 
+                  type="MAKE" 
+                  value={item.make || ""} 
+                  onChange={(v) => updateLineItem(index, { make: v || undefined })} 
+                  options={options.makes} 
+                  disabled={readOnly} 
+                  placeholder="Select Make"
+                />
               </div>
             )}
             
-            {(isLaptop || isDesktop || isTFT || isPrinter) && (
+            {showModel && (
               <div className="space-y-2">
                 <Label>Model</Label>
-                <Input value={item.item_model || ""} onChange={e => updateLineItem(index, { item_model: e.target.value })} required readOnly={readOnly} />
+                <OptionCombobox 
+                  type="MODEL" 
+                  value={item.item_model || ""} 
+                  onChange={(v) => updateLineItem(index, { item_model: v || undefined })} 
+                  options={options.models} 
+                  disabled={readOnly} 
+                  placeholder="Select Model"
+                />
               </div>
             )}
 
-            {(isLaptop || isDesktop) && (
+            {showComputeFields && (
               <>
                 <div className="space-y-2">
                   <Label>Processor</Label>
-                  <Select disabled={readOnly} value={item.processor || undefined} onValueChange={(v) => updateLineItem(index, { processor: v || undefined })}>
-                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>
-                      {PROCESSORS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <OptionCombobox 
+                    type="PROCESSOR" 
+                    value={item.processor || ""} 
+                    onChange={(v) => updateLineItem(index, { processor: v || undefined })} 
+                    options={options.processors} 
+                    disabled={readOnly} 
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Generation</Label>
-                  <Select disabled={readOnly} value={item.generation || undefined} onValueChange={(v) => updateLineItem(index, { generation: v || undefined })}>
-                    <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                    <SelectContent>
-                      {GENERATIONS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <OptionCombobox 
+                    type="GENERATION" 
+                    value={item.generation || ""} 
+                    onChange={(v) => updateLineItem(index, { generation: v || undefined })} 
+                    options={options.generations} 
+                    disabled={readOnly} 
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>RAM (GB)</Label>
@@ -157,32 +201,33 @@ export function LineItemRow({ item, index, transactionType, updateLineItem, remo
               </>
             )}
 
-            {isDesktop && (
+            {showDesktopType && (
               <div className="space-y-2">
                 <Label>Desktop Type</Label>
-                <Select disabled={readOnly} value={item.desktop_type || undefined} onValueChange={(v) => updateLineItem(index, { desktop_type: v || undefined })}>
-                  <SelectTrigger><SelectValue placeholder="Select Type" /></SelectTrigger>
-                  <SelectContent>
-                    {DESKTOP_TYPES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <OptionCombobox 
+                  type="DESKTOP_TYPE" 
+                  value={item.desktop_type || ""} 
+                  onChange={(v) => updateLineItem(index, { desktop_type: v || undefined })} 
+                  options={options.desktopTypes} 
+                  disabled={readOnly} 
+                />
               </div>
             )}
 
-            {isTFT && (
+            {showScreenSize && (
               <div className="space-y-2">
                 <Label>Screen Size</Label>
                 <Input value={item.screen_size || ""} onChange={e => updateLineItem(index, { screen_size: e.target.value })} required readOnly={readOnly} placeholder="e.g. 24 inch" />
               </div>
             )}
 
-            {(isRAM || isSSD || isHDD) && (
+            {showStorageFields && (
               <div className="space-y-2">
                 <Label>Capacity (GB)</Label>
                 {/* We map SSD/HDD capacity to ssd_gb / hdd_gb / ram_gb based on type to keep it simple, or just reuse ram_gb for simplicity. Wait, we have explicit columns. */}
-                {isRAM ? (
+                {cat === "RAM" || isRAM ? (
                   <Input type="number" min="0" value={item.ram_gb || ""} onChange={e => updateLineItem(index, { ram_gb: parseInt(e.target.value) })} required readOnly={readOnly} />
-                ) : isSSD ? (
+                ) : cat === "SSD" || cat === "NVMe" ? (
                   <Input type="number" min="0" value={item.ssd_gb || ""} onChange={e => updateLineItem(index, { ssd_gb: parseInt(e.target.value) })} required readOnly={readOnly} />
                 ) : (
                   <Input type="number" min="0" value={item.hdd_gb || ""} onChange={e => updateLineItem(index, { hdd_gb: parseInt(e.target.value) })} required readOnly={readOnly} />
@@ -190,31 +235,33 @@ export function LineItemRow({ item, index, transactionType, updateLineItem, remo
               </div>
             )}
 
-            {isRAM && (
+            {showRamType && (
               <div className="space-y-2">
                 <Label>RAM Type</Label>
-                <Select disabled={readOnly} value={item.ram_type || undefined} onValueChange={(v) => updateLineItem(index, { ram_type: v || undefined })}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    {RAM_TYPES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <OptionCombobox 
+                  type="RAM_TYPE" 
+                  value={item.ram_type || ""} 
+                  onChange={(v) => updateLineItem(index, { ram_type: v || undefined })} 
+                  options={options.ramTypes} 
+                  disabled={readOnly} 
+                />
               </div>
             )}
 
-            {isSSD && (
+            {showStorageType && (
               <div className="space-y-2">
                 <Label>Storage Type</Label>
-                <Select disabled={readOnly} value={item.storage_type || undefined} onValueChange={(v) => updateLineItem(index, { storage_type: v || undefined })}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    {STORAGE_TYPES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <OptionCombobox 
+                  type="STORAGE_TYPE" 
+                  value={item.storage_type || ""} 
+                  onChange={(v) => updateLineItem(index, { storage_type: v || undefined })} 
+                  options={options.storageTypes} 
+                  disabled={readOnly} 
+                />
               </div>
             )}
 
-            {isPeripheral && (
+            {showPeripheralItem && (
               <div className="space-y-2">
                 <Label>Peripheral Item</Label>
                 <Input value={item.peripheral_item || ""} onChange={e => updateLineItem(index, { peripheral_item: e.target.value })} required readOnly={readOnly} placeholder="e.g. Mouse, Keyboard" />
@@ -243,7 +290,7 @@ export function LineItemRow({ item, index, transactionType, updateLineItem, remo
             )}
 
             {/* Serial / MIS Numbers */}
-            {(isLaptop || isDesktop || isTFT) && (
+            {showMisNumbers && (
               <div className="space-y-2 md:col-span-2">
                 <Label>MIS Numbers (comma separated)</Label>
                 <Input 

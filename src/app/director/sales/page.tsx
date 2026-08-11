@@ -20,7 +20,7 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
     end = defaultRange.end;
   }
 
-  const where: any = { type: "SALE" };
+  const where: any = { type: "SALE", is_deleted: false };
   let startDate, endDate;
   if (start && end) {
     startDate = new Date(`${start}T00:00:00.000Z`);
@@ -33,9 +33,36 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
 
   const transactions = await prisma.transaction.findMany({
     where,
-    include: {
-      customer: true,
-      supplier: true,
+    select: {
+      id: true,
+      type: true,
+      created_at: true,
+      total_value: true,
+      amount_paid: true,
+      pending_amount: true,
+      payment_status: true,
+      remark: true,
+      return_type: true,
+      rent_start_date: true,
+      customer: { select: { id: true, name: true, phone: true } },
+      supplier: { select: { id: true, name: true } },
+      salesperson: { select: { username: true } },
+      LineItems: {
+        select: {
+          id: true,
+          type: true,
+          category: true,
+          item_model: true,
+          quantity: true,
+          serial_numbers: true,
+          price_per_unit: true,
+          total_price: true,
+          defect: true,
+          replacement_reason: true,
+          replaced_with: true,
+          supplier: { select: { name: true } }
+        }
+      }
     },
     orderBy: { created_at: "desc" }
   })

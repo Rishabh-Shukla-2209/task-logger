@@ -13,7 +13,7 @@ export default async function ManagerEmployeesPage() {
   if (!session || session.user.role !== "MANAGER") redirect("/")
 
   const employees = await prisma.user.findMany({
-    where: { role: { in: ["EMPLOYEE", "ACCOUNTANT", "COORDINATOR"] } },
+    where: { role: { in: ["EMPLOYEE", "ACCOUNTANT", "COORDINATOR"] }, is_active: true },
     select: { id: true, username: true, role: true },
     orderBy: { username: "asc" },
   })

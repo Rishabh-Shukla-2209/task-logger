@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth"
 import { Providers } from "@/components/Providers"
 import { Toaster } from "sonner"
 import { GlobalErrorListener } from "@/components/GlobalErrorListener"
+import NextTopLoader from "nextjs-toploader"
 
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
@@ -27,6 +28,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} bg-background min-h-screen flex text-foreground`}>
+        <NextTopLoader color="#2563eb" showSpinner={true} height={3} />
         <Providers>
           {session ? (
             <SidebarProvider>

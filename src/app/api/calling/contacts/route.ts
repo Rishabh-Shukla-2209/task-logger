@@ -26,6 +26,7 @@ export async function GET(req: Request) {
     const contacts = await prisma.callContact.findMany({
       where: whereClause,
       orderBy: { created_at: "desc" },
+      take: 100, // Added limit to prevent unbounded fetch on large datasets
       include: {
         customer: true,
       },

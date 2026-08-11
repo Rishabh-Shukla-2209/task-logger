@@ -3,12 +3,13 @@
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
-import { TransactionType, PaymentStatus, LineItemType } from "@prisma/client"
+import { TransactionType, PaymentStatus, LineItemType, ReturnType as PrismaReturnType } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 
 export type LineItemPayload = {
   id?: string
   type: LineItemType
+  supplier_id?: string
   category?: string
   item_model?: string
   serial_numbers?: string[]
@@ -49,6 +50,8 @@ export type TransactionPayload = {
   payment_account?: string
   remark?: string
   created_at?: Date | string
+  rent_start_date?: Date | string
+  return_type?: PrismaReturnType
   line_items: LineItemPayload[]
 }
 
@@ -72,6 +75,8 @@ export async function createTransaction(data: TransactionPayload) {
       payment_account: data.payment_account,
       remark: data.remark,
       ...(data.created_at ? { created_at: new Date(data.created_at) } : {}),
+      ...(data.rent_start_date ? { rent_start_date: new Date(data.rent_start_date) } : {}),
+      ...(data.return_type ? { return_type: data.return_type } : {}),
       LineItems: {
         create: data.line_items.map((item) => ({
           type: item.type,
@@ -82,8 +87,9 @@ export async function createTransaction(data: TransactionPayload) {
           quantity: item.quantity,
           bundle_name: item.bundle_name,
           bundle_components: item.bundle_components || null,
+          supplier_id: item.supplier_id || null,
           price_per_unit: item.price_per_unit,
-          total_price: item.total_price !== undefined ? item.total_price : (item.type === "BUNDLE" ? item.total_price : ((item.price_per_unit || 0) * (item.type === "SERIALIZED" ? (item.serial_numbers?.length || 0) : (item.quantity || 1)))),
+          total_price: item.total_price !== undefined ? item.total_price : (item.type === "BUNDLE" ? (item.price_per_unit || 0) * (item.quantity || 1) : ((item.price_per_unit || 0) * (item.type === "SERIALIZED" ? (item.serial_numbers?.length || 0) : (item.quantity || 1)))),
           make: item.make,
           processor: item.processor,
           generation: item.generation,
@@ -123,6 +129,7 @@ export async function fetchTransactions({
 
   const transactions = await prisma.transaction.findMany({
     where: {
+      is_deleted: false,
       ...(type ? { type } : {}),
       ...(payment_status ? { payment_status } : {})
     },
@@ -131,6 +138,7 @@ export async function fetchTransactions({
       supplier: true,
       salesperson: true,
     },
+    take: 200, // Added limit to prevent unbounded fetch on large datasets
     orderBy: { created_at: "desc" }
   })
 
@@ -154,6 +162,7 @@ export async function fetchTransactionById(id: string) {
     }
   })
 
+  if (transaction?.is_deleted) return null
   return transaction
 }
 
@@ -168,70 +177,76 @@ export async function updateTransaction(id: string, data: TransactionPayload) {
     include: { LineItems: true }
   })
 
-  if (!existingTransaction) {
+  if (!existingTransaction || existingTransaction.is_deleted) {
     throw new Error("Transaction not found")
   }
 
-  // Record Audit
-  await prisma.transactionAudit.create({
-    data: {
-      transaction_id: id,
-      edited_by_id: session.user.id,
-      previous_state: JSON.parse(JSON.stringify(existingTransaction)),
-      remark: "Edited transaction via form"
-    }
-  })
-
-  // Delete all existing line items to recreate them
-  await prisma.lineItem.deleteMany({
-    where: { transaction_id: id }
-  })
-
-  const transaction = await prisma.transaction.update({
-    where: { id },
-    data: {
-      type: data.type,
-      customer_id: data.customer_id,
-      supplier_id: data.supplier_id,
-      salesperson_id: data.salesperson_id,
-      total_value: data.total_value,
-      amount_paid: data.amount_paid,
-      pending_amount: data.pending_amount,
-      payment_status: data.payment_status,
-      payment_account: data.payment_account,
-      remark: data.remark,
-      ...(data.created_at ? { created_at: new Date(data.created_at) } : {}),
-      LineItems: {
-        create: data.line_items.map((item) => ({
-          type: item.type,
-          category: item.category,
-          item_model: item.item_model,
-          serial_numbers: item.serial_numbers || [],
-          mis_numbers: item.mis_numbers || [],
-          quantity: item.quantity,
-          bundle_name: item.bundle_name,
-          bundle_components: item.bundle_components || null,
-          price_per_unit: item.price_per_unit,
-          total_price: item.total_price !== undefined ? item.total_price : (item.type === "BUNDLE" ? item.total_price : ((item.price_per_unit || 0) * (item.type === "SERIALIZED" ? (item.serial_numbers?.length || 0) : (item.quantity || 1)))),
-          make: item.make,
-          processor: item.processor,
-          generation: item.generation,
-          ram_gb: item.ram_gb,
-          ssd_gb: item.ssd_gb,
-          hdd_gb: item.hdd_gb,
-          graphic_card: item.graphic_card,
-          desktop_type: item.desktop_type,
-          screen_size: item.screen_size,
-          ram_type: item.ram_type,
-          storage_type: item.storage_type,
-          peripheral_item: item.peripheral_item,
-          defect: item.defect,
-          replacement_reason: item.replacement_reason,
-          replaced_with: item.replaced_with,
-        }))
+  // Wrap the update in a transaction to ensure atomicity
+  const transaction = await prisma.$transaction(async (tx) => {
+    // Record Audit
+    await tx.transactionAudit.create({
+      data: {
+        transaction_id: id,
+        edited_by_id: session.user.id,
+        previous_state: JSON.parse(JSON.stringify(existingTransaction)),
+        remark: "Edited transaction via form"
       }
-    }
-  })
+    })
+
+    // Delete all existing line items to recreate them
+    await tx.lineItem.deleteMany({
+      where: { transaction_id: id }
+    })
+
+    return await tx.transaction.update({
+      where: { id },
+      data: {
+        type: data.type,
+        customer_id: data.customer_id,
+        supplier_id: data.supplier_id,
+        salesperson_id: data.salesperson_id,
+        total_value: data.total_value,
+        amount_paid: data.amount_paid,
+        pending_amount: data.pending_amount,
+        payment_status: data.payment_status,
+        payment_account: data.payment_account,
+        remark: data.remark,
+        ...(data.created_at ? { created_at: new Date(data.created_at) } : {}),
+        ...(data.rent_start_date ? { rent_start_date: new Date(data.rent_start_date) } : {}),
+        ...(data.return_type ? { return_type: data.return_type } : {}),
+        LineItems: {
+          create: data.line_items.map((item) => ({
+            type: item.type,
+            category: item.category,
+            item_model: item.item_model,
+            serial_numbers: item.serial_numbers || [],
+            mis_numbers: item.mis_numbers || [],
+            quantity: item.quantity,
+            bundle_name: item.bundle_name,
+            bundle_components: item.bundle_components || null,
+            supplier_id: item.supplier_id || null,
+            price_per_unit: item.price_per_unit,
+            total_price: item.total_price !== undefined ? item.total_price : (item.type === "BUNDLE" ? (item.price_per_unit || 0) * (item.quantity || 1) : ((item.price_per_unit || 0) * (item.type === "SERIALIZED" ? (item.serial_numbers?.length || 0) : (item.quantity || 1)))),
+            make: item.make,
+            processor: item.processor,
+            generation: item.generation,
+            ram_gb: item.ram_gb,
+            ssd_gb: item.ssd_gb,
+            hdd_gb: item.hdd_gb,
+            graphic_card: item.graphic_card,
+            desktop_type: item.desktop_type,
+            screen_size: item.screen_size,
+            ram_type: item.ram_type,
+            storage_type: item.storage_type,
+            peripheral_item: item.peripheral_item,
+            defect: item.defect,
+            replacement_reason: item.replacement_reason,
+            replaced_with: item.replaced_with,
+          }))
+        }
+      }
+    })
+  }, { timeout: 20000 })
 
   revalidatePath(`/accountant/transactions/${id}`)
   revalidatePath("/accountant/transactions")
@@ -242,12 +257,13 @@ export async function updateTransaction(id: string, data: TransactionPayload) {
 
 export async function deleteTransaction(id: string) {
   const session = await getServerSession(authOptions)
-  if (!session || !["ACCOUNTANT", "MANAGER", "DIRECTOR"].includes(session.user.role)) {
+  if (!session || !["SUPERUSER"].includes(session.user.role)) {
     throw new Error("Unauthorized")
   }
 
-  await prisma.transaction.delete({
-    where: { id }
+  await prisma.transaction.update({
+    where: { id },
+    data: { is_deleted: true }
   })
 
   revalidatePath("/accountant/transactions")

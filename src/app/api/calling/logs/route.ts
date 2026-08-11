@@ -45,6 +45,7 @@ export async function GET(req: Request) {
     const logs = await prisma.callLog.findMany({
       where: whereClause,
       orderBy: { created_at: "desc" },
+      take: 200, // Added limit to prevent unbounded fetch on large datasets
       include: {
         contact: true,
         user: {

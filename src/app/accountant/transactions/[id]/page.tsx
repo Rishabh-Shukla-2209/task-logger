@@ -26,7 +26,7 @@ export default async function TransactionDetailPage({ params }: { params: Promis
     }
   })
 
-  if (!tx) {
+  if (!tx || tx.is_deleted) {
     return <div className="text-center py-20">Transaction not found.</div>
   }
 
@@ -34,7 +34,7 @@ export default async function TransactionDetailPage({ params }: { params: Promis
     <div className="max-w-4xl mx-auto space-y-8 print:w-full print:max-w-none">
       <div className="flex justify-between items-center print:hidden">
         <Link 
-          href={`/accountant/${tx.type === "REPAIR" ? "acc-repairs" : tx.type.toLowerCase() + "s"}`}
+          href={`/accountant/${tx.type.toLowerCase()}s`}
           className={buttonVariants({ variant: "outline", size: "sm", className: "gap-2" })}
         >
           <ArrowLeft className="h-4 w-4" /> Back
@@ -148,7 +148,7 @@ export default async function TransactionDetailPage({ params }: { params: Promis
                         {item.type !== "BUNDLE" && item.price_per_unit ? `₹${item.price_per_unit.toFixed(2)}` : "-"}
                       </td>
                       <td className="px-4 py-3 text-right font-medium">
-                        ₹{(item.type === "BUNDLE" ? (item.total_price || 0) * (item.quantity || 1) : (item.price_per_unit || 0) * (item.type === "SERIALIZED" ? item.serial_numbers.length : (item.quantity || 1))).toFixed(2)}
+                        ₹{(item.total_price != null ? item.total_price : (item.type === "BUNDLE" ? (item.price_per_unit || 0) * (item.quantity || 1) : (item.price_per_unit || 0) * (item.type === "SERIALIZED" ? item.serial_numbers.length : (item.quantity || 1)))).toFixed(2)}
                       </td>
                     </tr>
                   ))}

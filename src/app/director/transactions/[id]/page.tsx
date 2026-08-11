@@ -30,7 +30,7 @@ export default async function TransactionDetailPage({ params }: { params: Promis
     }
   })
 
-  if (!tx) {
+  if (!tx || tx.is_deleted) {
     return <div className="text-center py-20">Transaction not found.</div>
   }
 

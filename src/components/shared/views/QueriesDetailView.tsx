@@ -27,30 +27,30 @@ export async function QueriesDetailView({
   basePath: string, 
   isReadOnly?: boolean 
 }) {
-  const query = await prisma.serviceQuery.findUnique({
-    where: { id: id },
-    include: {
-      QueryEvents: {
-        include: { user: { select: { username: true } } },
-        orderBy: { created_at: "asc" }
-      },
-      customer: true,
-      confirmed_by: { select: { username: true } },
-      assigned_to: { select: { username: true } },
-    }
-  })
-
-  const employees = await prisma.user.findMany({
-    where: { role: "EMPLOYEE" },
-    select: { id: true, username: true },
-    orderBy: { username: "asc" }
-  })
-
-  const confirmers = await prisma.user.findMany({
-    where: { role: { in: ["COORDINATOR", "MANAGER"] } },
-    select: { id: true, username: true },
-    orderBy: { username: "asc" }
-  })
+  const [query, employees, confirmers] = await Promise.all([
+    prisma.serviceQuery.findUnique({
+      where: { id: id },
+      include: {
+        QueryEvents: {
+          include: { user: { select: { username: true } } },
+          orderBy: { created_at: "asc" }
+        },
+        customer: true,
+        confirmed_by: { select: { username: true } },
+        assigned_to: { select: { username: true } },
+      }
+    }),
+    prisma.user.findMany({
+      where: { role: "EMPLOYEE", is_active: true },
+      select: { id: true, username: true },
+      orderBy: { username: "asc" }
+    }),
+    prisma.user.findMany({
+      where: { role: { in: ["COORDINATOR", "MANAGER"] }, is_active: true },
+      select: { id: true, username: true },
+      orderBy: { username: "asc" }
+    })
+  ])
 
   if (!query) redirect(basePath)
 

@@ -5,13 +5,13 @@ import prisma from "@/lib/prisma"
 import { TransactionsTable } from "@/components/accountant/TransactionsTable"
 import { SingleAnalysis } from "@/components/director/SingleAnalysis"
 
-export default async function SalesPage(props: any) {
-  const searchParams = await props.searchParams || {};
+export default async function SalesPage({ searchParams }: { searchParams: Promise<{ start?: string; end?: string }> }) {
+  const sp = await searchParams || {};
   const session = await getServerSession(authOptions)
   if (!session || session.user.role !== "ACCOUNTANT") redirect("/")
 
-  let start = searchParams?.start;
-  let end = searchParams?.end;
+  let start = sp?.start;
+  let end = sp?.end;
   if (!start && !end) {
     const now = new Date();
     const pad = (n: number) => n.toString().padStart(2, '0');
@@ -19,7 +19,7 @@ export default async function SalesPage(props: any) {
     end = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
   }
 
-  const where: any = { type: "SALE" };
+  const where: any = { type: "SALE", is_deleted: false };
   let startDate, endDate;
   if (start && end) {
     startDate = new Date(`${start}T00:00:00.000Z`);
@@ -32,11 +32,34 @@ export default async function SalesPage(props: any) {
 
   const transactions = await prisma.transaction.findMany({
     where,
-    include: {
-      customer: true,
+        select: {
+      id: true,
+      type: true,
+      created_at: true,
+      total_value: true,
+      amount_paid: true,
+      pending_amount: true,
+      payment_status: true,
+      remark: true,
+      return_type: true,
+      rent_start_date: true,
+      customer: { select: { id: true, name: true, phone: true } },
+      supplier: { select: { id: true, name: true } },
+      salesperson: { select: { username: true } },
       LineItems: {
-        include: {
-          supplier: true
+        select: {
+          id: true,
+          type: true,
+          category: true,
+          item_model: true,
+          quantity: true,
+          serial_numbers: true,
+          price_per_unit: true,
+          total_price: true,
+          defect: true,
+          replacement_reason: true,
+          replaced_with: true,
+          supplier: { select: { name: true } }
         }
       }
     },

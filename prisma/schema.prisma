@@ -172,6 +172,10 @@ model Task {
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+
+  @@index([user_id])
+  @@index([status])
+  @@index([log_date])
 }
 
 // ─── ENTITIES ───────────────────────────────────────────
@@ -183,6 +187,7 @@ model Customer {
   name       String
   phone      String?
   address    String?
+  location   String?
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
@@ -191,6 +196,8 @@ model Customer {
   Transactions   Transaction[]
   CallContacts   CallContact[]
   PartRequests   PartRequest[]
+
+  @@index([user_id])
 }
 
 model Supplier {
@@ -207,6 +214,8 @@ model Supplier {
   PartRequests      PartRequest[]
   Transactions      Transaction[]
   lineItems         LineItem[]
+
+  @@index([type])
 }
 
 // ─── MODULE B: SERVICE DESK ─────────────────────────────
@@ -235,6 +244,10 @@ model ServiceQuery {
   created_at  DateTime     @default(now())
   updated_at  DateTime     @updatedAt
   QueryEvents QueryEvent[]
+
+  @@index([customer_id])
+  @@index([status])
+  @@index([query_type])
 }
 
 model QueryEvent {
@@ -246,6 +259,8 @@ model QueryEvent {
   action     String // e.g. "RECORDED → CONFIRMED"
   remark     String?
   created_at DateTime     @default(now())
+
+  @@index([query_id])
 }
 
 // ─── COORDINATOR MODULES ────────────────────────────────
@@ -260,6 +275,9 @@ model Quotation {
   created_at      DateTime         @default(now())
   updated_at      DateTime         @updatedAt
   QuotationEvents QuotationEvent[]
+
+  @@index([customer_id])
+  @@index([status])
 }
 
 model QuotationEvent {
@@ -271,6 +289,8 @@ model QuotationEvent {
   action       String
   remark       String?
   created_at   DateTime  @default(now())
+
+  @@index([quotation_id])
 }
 
 model WarrantyExchange {
@@ -284,6 +304,9 @@ model WarrantyExchange {
   created_at             DateTime                @default(now())
   updated_at             DateTime                @updatedAt
   WarrantyExchangeEvents WarrantyExchangeEvent[]
+
+  @@index([supplier_id])
+  @@index([status])
 }
 
 model WarrantyExchangeEvent {
@@ -295,6 +318,8 @@ model WarrantyExchangeEvent {
   action               String
   remark               String?
   created_at           DateTime         @default(now())
+
+  @@index([warranty_exchange_id])
 }
 
 model InternalRepair {
@@ -309,6 +334,9 @@ model InternalRepair {
   created_at           DateTime              @default(now())
   updated_at           DateTime              @updatedAt
   InternalRepairEvents InternalRepairEvent[]
+
+  @@index([supplier_id])
+  @@index([status])
 }
 
 model InternalRepairEvent {
@@ -320,6 +348,8 @@ model InternalRepairEvent {
   action             String
   remark             String?
   created_at         DateTime       @default(now())
+
+  @@index([internal_repair_id])
 }
 
 model PartRequest {
@@ -337,6 +367,9 @@ model PartRequest {
   created_at          DateTime           @default(now())
   updated_at          DateTime           @updatedAt
   PartRequestEvents   PartRequestEvent[]
+
+  @@index([customer_id])
+  @@index([status])
 }
 
 model PartRequestEvent {
@@ -348,6 +381,8 @@ model PartRequestEvent {
   action          String
   remark          String?
   created_at      DateTime    @default(now())
+
+  @@index([part_request_id])
 }
 
 // ─── MODULE C: ACCOUNTING ───────────────────────────────
@@ -406,9 +441,15 @@ model Transaction {
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+  is_deleted Boolean  @default(false)
 
   LineItems LineItem[]
   Audits    TransactionAudit[]
+
+  @@index([type, is_deleted])
+  @@index([created_at])
+  @@index([customer_id])
+  @@index([supplier_id])
 }
 
 model LineItem {
@@ -461,6 +502,8 @@ model LineItem {
   total_price    Float?
 
   created_at DateTime @default(now())
+
+  @@index([transaction_id])
 }
 
 model TransactionAudit {
@@ -474,6 +517,8 @@ model TransactionAudit {
   previous_state Json // Stores the whole Transaction object (including LineItems) before the edit
   remark         String?
   created_at     DateTime @default(now())
+
+  @@index([transaction_id])
 }
 
 // ─── MODULE D: OFFICE ADMIN ─────────────────────────────
@@ -487,6 +532,8 @@ model PaymentFollowup {
   updated_at     DateTime              @updatedAt
 
   Events PaymentFollowupEvent[]
+
+  @@index([status])
 }
 
 model PaymentFollowupEvent {
@@ -500,6 +547,8 @@ model PaymentFollowupEvent {
   previous_amount Float?
   remark          String?
   created_at      DateTime        @default(now())
+
+  @@index([followup_id])
 }
 
 // ─── MODULE E: CLIENT CALLING ───────────────────────────
@@ -517,6 +566,9 @@ model CallContact {
   updated_at  DateTime  @updatedAt
 
   CallLogs CallLog[]
+
+  @@index([user_id])
+  @@index([phone])
 }
 
 model CallLog {
@@ -532,4 +584,42 @@ model CallLog {
   price_asked Float?
   qty         Int?
   created_at  DateTime    @default(now())
+
+  @@index([user_id])
+  @@index([contact_id])
+}
+
+enum OptionType {
+  CATEGORY
+  GENERATION
+  PROCESSOR
+  DESKTOP_TYPE
+  RAM_TYPE
+  STORAGE_TYPE
+  MAKE
+  MODEL
+}
+
+enum CategoryFieldGroup {
+  COMPUTE
+  COMPUTE_DESKTOP
+  DISPLAY
+  STORAGE_RAM
+  STORAGE_DISK
+  PRINTER
+  PERIPHERAL
+  OTHER
+}
+
+model LineItemOption {
+  id          String              @id @default(uuid())
+  type        OptionType
+  value       String
+  field_group CategoryFieldGroup?
+  sort_order  Int                 @default(0)
+  is_active   Boolean             @default(true)
+  created_at  DateTime            @default(now())
+
+  @@unique([type, value])
+  @@index([type, is_active])
 }

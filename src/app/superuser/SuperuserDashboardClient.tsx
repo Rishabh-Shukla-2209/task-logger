@@ -8,8 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Plus, KeyRound, ShieldAlert, Check, X, Loader2 } from "lucide-react"
-import { createUser, toggleUserStatus, updateUserRole, resetUserPassword } from "@/actions/superuser"
+import { Plus, KeyRound, ShieldAlert, Check, X, Loader2, Trash2 } from "lucide-react"
+import { createUser, toggleUserStatus, updateUserRole, resetUserPassword, deleteUser } from "@/actions/superuser"
 import { handleError } from "@/lib/errorHandler"
 import { toast } from "sonner"
 
@@ -77,6 +77,21 @@ export function SuperuserDashboardClient({ initialUsers }: { initialUsers: any[]
     }
   }
 
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm("Are you sure you want to permanently delete this user? This cannot be undone.")) return
+    
+    setActionLoadingId(userId)
+    try {
+      await deleteUser(userId)
+      toast.success("User deleted successfully")
+      setUsers(users.filter(u => u.id !== userId))
+    } catch (err) {
+      handleError(err, "Failed to delete user")
+    } finally {
+      setActionLoadingId(null)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-end">
@@ -104,7 +119,7 @@ export function SuperuserDashboardClient({ initialUsers }: { initialUsers: any[]
                     <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.values(Role).map(role => (
+                    {Object.values(Role).filter(r => r !== 'SUPERUSER').map(role => (
                       <SelectItem key={role} value={role}>{role}</SelectItem>
                     ))}
                   </SelectContent>
@@ -144,7 +159,7 @@ export function SuperuserDashboardClient({ initialUsers }: { initialUsers: any[]
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.values(Role).map(r => (
+                      {Object.values(Role).filter(r => r !== 'SUPERUSER').map(r => (
                         <SelectItem key={r} value={r} className="text-xs">{r}</SelectItem>
                       ))}
                     </SelectContent>
@@ -186,6 +201,16 @@ export function SuperuserDashboardClient({ initialUsers }: { initialUsers: any[]
                     ) : (
                       <Check className="h-4 w-4" />
                     )}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    title="Delete User"
+                    disabled={actionLoadingId === user.id}
+                    onClick={() => handleDeleteUser(user.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </TableCell>
               </TableRow>

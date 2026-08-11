@@ -19,7 +19,7 @@ export const authOptions: NextAuthOptions = {
         const user = await prisma.user.findUnique({
           where: { username: credentials.username }
         })
-        if (!user) return null
+        if (!user || !user.is_active) return null
 
         // Use bcrypt to compare the hashed password
         const passwordMatch = await bcrypt.compare(credentials.password, user.password)

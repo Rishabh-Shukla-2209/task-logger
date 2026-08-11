@@ -118,7 +118,7 @@ export function TransactionsTable({
 
   // Extract unique options from loaded transactions
   const uniqueCustomers = useMemo(() => Array.from(new Set(transactions.map(t => t.customer?.name).filter(Boolean))) as string[], [transactions])
-  const uniqueSalespersons = useMemo(() => Array.from(new Set(transactions.map(t => t.salesperson?.name).filter(Boolean))) as string[], [transactions])
+  const uniqueSalespersons = useMemo(() => Array.from(new Set(transactions.map(t => t.salesperson?.username).filter(Boolean))) as string[], [transactions])
   
   const uniqueSuppliers = useMemo(() => {
     const set = new Set<string>()
@@ -377,7 +377,7 @@ export function TransactionsTable({
                       {tx.LineItems?.map((li: any) => {
                         const qty = (li.type === "SERIALIZED" && li.serial_numbers?.length > 0) ? li.serial_numbers.length : (li.quantity || 1);
                         const rate = li.price_per_unit || 0;
-                        const total = li.total_price || (rate * qty) || 0;
+                        const total = li.total_price != null ? li.total_price : (rate * qty) || 0;
                         return (
                           <div key={li.id} className="text-sm">
                             ₹{total.toFixed(2)}

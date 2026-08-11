@@ -10,14 +10,15 @@ import { Eye } from "lucide-react"
 import Link from "next/link"
 import { NewFollowupDialog } from "./NewFollowupDialog"
 
-export default async function AdminFollowupsPage({ searchParams }: { searchParams: { status?: string } }) {
+export default async function AdminFollowupsPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
   const session = await getServerSession(authOptions)
 
   if (!session || session.user.role !== "ADMIN") {
     redirect("/")
   }
 
-  const currentStatus = searchParams.status === "RESOLVED" ? "RESOLVED" : "ACTIVE"
+  const sp = await searchParams
+  const currentStatus = sp.status === "RESOLVED" ? "RESOLVED" : "ACTIVE"
 
   const followups = await prisma.paymentFollowup.findMany({
     where: { status: currentStatus },

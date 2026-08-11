@@ -9,12 +9,17 @@ export default async function NewTransactionPage({ searchParams }: { searchParam
   const session = await getServerSession(authOptions)
   if (!session || session.user.role !== "ACCOUNTANT") redirect("/")
 
-  const customers = await prisma.customer.findMany({ orderBy: { name: "asc" } })
-  const suppliers = await prisma.supplier.findMany({ orderBy: { name: "asc" } })
-  const employees = await prisma.user.findMany({
-    where: { role: "EMPLOYEE" },
-    orderBy: { username: "asc" }
-  })
+  const { fetchAllOptions } = await import("@/actions/option-actions")
+  
+  const [customers, suppliers, employees, options] = await Promise.all([
+    prisma.customer.findMany({ orderBy: { name: "asc" } }),
+    prisma.supplier.findMany({ orderBy: { name: "asc" } }),
+    prisma.user.findMany({
+      where: { role: { not: "SUPERUSER" }, is_active: true },
+      orderBy: { username: "asc" }
+    }),
+    fetchAllOptions()
+  ])
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
@@ -28,6 +33,7 @@ export default async function NewTransactionPage({ searchParams }: { searchParam
         customers={customers} 
         suppliers={suppliers} 
         employees={employees} 
+        options={options}
       />
     </div>
   )
