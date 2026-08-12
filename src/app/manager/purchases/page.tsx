@@ -44,7 +44,6 @@ export default async function PurchasesPage({ searchParams }: { searchParams: Pr
       return_type: true,
       rent_start_date: true,
       customer: { select: { id: true, name: true, phone: true } },
-      supplier: { select: { id: true, name: true } },
       salesperson: { select: { username: true } },
       LineItems: {
         select: {

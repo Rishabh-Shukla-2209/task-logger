@@ -19,7 +19,6 @@ export default async function TransactionDetailPage({ params }: { params: Promis
     where: { id },
     include: {
       customer: true,
-      supplier: true,
       salesperson: true,
       accountant: true,
       LineItems: true,
@@ -78,14 +77,8 @@ export default async function TransactionDetailPage({ params }: { params: Promis
                   {tx.customer.address && <p className="whitespace-pre-wrap">{tx.customer.address}</p>}
                 </div>
               )}
-              {tx.supplier && (
-                <div>
-                  <p className="font-bold">{tx.supplier.name}</p>
-                  {tx.supplier.contact && <p>{tx.supplier.contact}</p>}
-                  {tx.supplier.address && <p className="whitespace-pre-wrap">{tx.supplier.address}</p>}
-                </div>
-              )}
-              {!tx.customer && !tx.supplier && <p>General</p>}
+              
+              {!tx.customer && <p>General</p>}
             </div>
             <div className="text-right">
               <h3 className="font-semibold text-sm uppercase text-muted-foreground mb-2">Details</h3>

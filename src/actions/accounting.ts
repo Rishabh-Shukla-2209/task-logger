@@ -86,8 +86,8 @@ export async function createTransaction(data: TransactionPayload) {
           mis_numbers: item.mis_numbers || [],
           quantity: item.quantity,
           bundle_name: item.bundle_name,
-          bundle_components: item.bundle_components || null,
-          supplier_id: item.supplier_id || null,
+          bundle_components: item.bundle_components ? (item.bundle_components as any) : null,
+          supplier_id: item.supplier_id as string,
           price_per_unit: item.price_per_unit,
           total_price: item.total_price !== undefined ? item.total_price : (item.type === "BUNDLE" ? (item.price_per_unit || 0) * (item.quantity || 1) : ((item.price_per_unit || 0) * (item.type === "SERIALIZED" ? (item.serial_numbers?.length || 0) : (item.quantity || 1)))),
           make: item.make,
@@ -106,7 +106,7 @@ export async function createTransaction(data: TransactionPayload) {
           defect: item.defect,
           replacement_reason: item.replacement_reason,
           replaced_with: item.replaced_with,
-        }))
+          } as any))
       }
     }
   })
@@ -135,7 +135,6 @@ export async function fetchTransactions({
     },
     include: {
       customer: true,
-      supplier: true,
       salesperson: true,
     },
     take: 200, // Added limit to prevent unbounded fetch on large datasets
@@ -155,7 +154,6 @@ export async function fetchTransactionById(id: string) {
     where: { id },
     include: {
       customer: true,
-      supplier: true,
       salesperson: true,
       accountant: true,
       LineItems: true
@@ -223,8 +221,8 @@ export async function updateTransaction(id: string, data: TransactionPayload) {
             mis_numbers: item.mis_numbers || [],
             quantity: item.quantity,
             bundle_name: item.bundle_name,
-            bundle_components: item.bundle_components || null,
-            supplier_id: item.supplier_id || null,
+            bundle_components: item.bundle_components ? (item.bundle_components as any) : null,
+            supplier_id: item.supplier_id as string,
             price_per_unit: item.price_per_unit,
             total_price: item.total_price !== undefined ? item.total_price : (item.type === "BUNDLE" ? (item.price_per_unit || 0) * (item.quantity || 1) : ((item.price_per_unit || 0) * (item.type === "SERIALIZED" ? (item.serial_numbers?.length || 0) : (item.quantity || 1)))),
             make: item.make,
@@ -242,7 +240,7 @@ export async function updateTransaction(id: string, data: TransactionPayload) {
             defect: item.defect,
             replacement_reason: item.replacement_reason,
             replaced_with: item.replaced_with,
-          }))
+          } as any))
         }
       }
     })
