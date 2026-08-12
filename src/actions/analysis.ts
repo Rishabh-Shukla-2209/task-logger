@@ -19,8 +19,7 @@ export async function getSalesAnalysis(
   await checkAccess()
 
   const transactions = await prisma.transaction.findMany({
-    where: { is_deleted: false,
-      type: "SALE",
+    where: { type: "SALE",
       ...(startDate && endDate ? { created_at: { gte: startDate, lte: endDate } } : {}),
       ...(groupBy === "pending_payment" ? { pending_amount: { gt: 0 } } : {})
     },
@@ -29,7 +28,7 @@ export async function getSalesAnalysis(
       total_value: true,
       customer: { select: { name: true } },
       salesperson: { select: { username: true } },
-      supplier: { select: { name: true } },
+
       LineItems: {
         select: {
           type: true,
@@ -40,6 +39,7 @@ export async function getSalesAnalysis(
           processor: true,
           generation: true,
           category: true,
+          supplier: { select: { name: true } },
         }
       }
     }
@@ -48,11 +48,10 @@ export async function getSalesAnalysis(
   const results: Record<string, { name: string, quantity: number, total_value: number }> = {}
 
   transactions.forEach(tx => {
-    if (groupBy === "customer" || groupBy === "salesperson" || groupBy === "pending_payment" || groupBy === "source") {
+    if (groupBy === "customer" || groupBy === "salesperson" || groupBy === "pending_payment") {
       let key = "Unknown";
       if (groupBy === "salesperson") key = tx.salesperson?.username || "Unknown"
       else if (groupBy === "customer" || groupBy === "pending_payment") key = tx.customer?.name || "Unknown"
-      else if (groupBy === "source") key = tx.supplier?.name || "Unknown"
 
       if (!results[key]) results[key] = { name: key, quantity: 0, total_value: 0 }
 
@@ -75,8 +74,9 @@ export async function getSalesAnalysis(
         if (groupBy === "processor" && li.processor) key = li.processor
         if (groupBy === "generation" && li.generation) key = li.generation
         if (groupBy === "category" && li.category) key = li.category
+        if (groupBy === "source" && li.supplier?.name) key = li.supplier.name
 
-        if (key === "Unknown" && groupBy !== "model") return // skip if no specific trait
+        if (key === "Unknown" && groupBy !== "model" && groupBy !== "source") return // skip if no specific trait
 
         if (!results[key]) results[key] = { name: key, quantity: 0, total_value: 0 }
         results[key].quantity += (li.type === "SERIALIZED" && li.serial_numbers?.length > 0 ? li.serial_numbers.length : li.quantity) || 1
@@ -97,8 +97,7 @@ export async function getSalesAnalysisDetails(
   await checkAccess()
 
   const transactions = await prisma.transaction.findMany({
-    where: { is_deleted: false,
-      type: "SALE",
+    where: { type: "SALE",
       ...(startDate && endDate ? { created_at: { gte: startDate, lte: endDate } } : {}),
       ...(groupBy === "pending_payment" ? { pending_amount: { gt: 0 } } : {})
     },
@@ -110,7 +109,7 @@ export async function getSalesAnalysisDetails(
       payment_account: true,
       customer: { select: { name: true } },
       salesperson: { select: { username: true } },
-      supplier: { select: { name: true } },
+
       LineItems: {
         select: {
           type: true,
@@ -126,6 +125,7 @@ export async function getSalesAnalysisDetails(
           ssd_gb: true,
           price_per_unit: true,
           total_price: true,
+          supplier: { select: { name: true } }
         }
       }
     }
@@ -136,7 +136,9 @@ export async function getSalesAnalysisDetails(
   transactions.forEach(tx => {
     const isCustomerMatch = (tx.customer?.name || "Unknown") === filterName;
     const isSalespersonMatch = (tx.salesperson?.username || "Unknown") === filterName;
-    const isSourceMatch = (tx.supplier?.name || "Unknown") === filterName;
+    const supplierNames = tx.LineItems?.map(li => li.supplier?.name).filter(Boolean) || [];
+    const sourceName = supplierNames.length > 0 ? Array.from(new Set(supplierNames)).join(", ") : "Unknown";
+    const isSourceMatch = sourceName.includes(filterName) || sourceName === filterName;
 
     if ((groupBy === "customer" || groupBy === "pending_payment") && !isCustomerMatch) return;
     if (groupBy === "salesperson" && !isSalespersonMatch) return;
@@ -239,13 +241,12 @@ export async function getPurchaseAnalysis(
   await checkAccess()
 
   const transactions = await prisma.transaction.findMany({
-    where: { is_deleted: false,
-      type: "PURCHASE",
+    where: { type: "PURCHASE",
       ...(startDate && endDate ? { created_at: { gte: startDate, lte: endDate } } : {})
     },
     select: {
       total_value: true,
-      supplier: { select: { name: true } },
+
       LineItems: {
         select: {
           quantity: true,
@@ -255,6 +256,7 @@ export async function getPurchaseAnalysis(
           processor: true,
           generation: true,
           total_price: true,
+          supplier: { select: { name: true } }
         }
       }
     }
@@ -263,31 +265,20 @@ export async function getPurchaseAnalysis(
   const results: Record<string, { name: string, quantity: number, total_value: number }> = {}
 
   transactions.forEach(tx => {
-    if (groupBy === "vendor") {
-      const key = tx.supplier?.name || "Unknown"
-      if (!results[key]) results[key] = { name: key, quantity: 0, total_value: 0 }
-
-      let qty = 0
-      tx.LineItems.forEach(li => {
-        qty += (li.quantity || li.serial_numbers.length || 1)
-      })
-      results[key].quantity += qty
-      results[key].total_value += tx.total_value
-    } else {
-      tx.LineItems.forEach(li => {
+    tx.LineItems.forEach(li => {
         let key = "Unknown"
         if (groupBy === "category" && li.category) key = li.category
         if (groupBy === "model" && li.item_model) key = li.item_model
         if (groupBy === "processor" && li.processor) key = li.processor
         if (groupBy === "generation" && li.generation) key = li.generation
+        if (groupBy === "vendor" && li.supplier?.name) key = li.supplier.name
 
-        if (key === "Unknown" && groupBy !== "category" && groupBy !== "model") return
+        if (key === "Unknown" && groupBy !== "category" && groupBy !== "model" && groupBy !== "vendor") return
 
         if (!results[key]) results[key] = { name: key, quantity: 0, total_value: 0 }
         results[key].quantity += (li.quantity || li.serial_numbers.length || 1)
         results[key].total_value += (li.total_price || 0)
       })
-    }
   })
 
   return Object.values(results).sort((a, b) => b.total_value - a.total_value)
@@ -301,8 +292,7 @@ export async function getReplacementAnalysis(
   await checkAccess()
 
   const transactions = await prisma.transaction.findMany({
-    where: { is_deleted: false,
-      type: "REPLACEMENT",
+    where: { type: "REPLACEMENT",
       ...(startDate && endDate ? { created_at: { gte: startDate, lte: endDate } } : {})
     },
     select: {
@@ -350,8 +340,7 @@ export async function getRepairAnalysis(startDate?: Date, endDate?: Date) {
   await checkAccess()
 
   const transactions = await prisma.transaction.findMany({
-    where: { is_deleted: false,
-      type: "REPAIR",
+    where: { type: "REPAIR",
       ...(startDate && endDate ? { created_at: { gte: startDate, lte: endDate } } : {})
     },
     select: {
@@ -400,8 +389,7 @@ export async function getRentAnalysis(
 ) {
   await checkAccess()
   const transactions = await prisma.transaction.findMany({
-    where: { is_deleted: false,
-      type: "RENT",
+    where: { type: "RENT",
       ...(startDate && endDate ? { created_at: { gte: startDate, lte: endDate } } : {})
     },
     select: {
@@ -438,8 +426,7 @@ export async function getReturnAnalysis(
 ) {
   await checkAccess()
   const transactions = await prisma.transaction.findMany({
-    where: { is_deleted: false,
-      type: "RETURN",
+    where: { type: "RETURN",
       ...(startDate && endDate ? { created_at: { gte: startDate, lte: endDate } } : {})
     },
     select: {

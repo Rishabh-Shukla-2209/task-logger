@@ -212,7 +212,6 @@ model Supplier {
   WarrantyExchanges WarrantyExchange[]
   InternalRepairs   InternalRepair[]
   PartRequests      PartRequest[]
-  Transactions      Transaction[]
   lineItems         LineItem[]
 
   @@index([type])
@@ -421,8 +420,6 @@ model Transaction {
   // Relations
   customer_id    String?
   customer       Customer? @relation(fields: [customer_id], references: [id])
-  supplier_id    String?
-  supplier       Supplier? @relation(fields: [supplier_id], references: [id])
   salesperson_id String?
   salesperson    User?     @relation("SalespersonTransactions", fields: [salesperson_id], references: [id])
   accountant_id  String
@@ -441,15 +438,14 @@ model Transaction {
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
-  is_deleted Boolean  @default(false)
+
 
   LineItems LineItem[]
   Audits    TransactionAudit[]
 
-  @@index([type, is_deleted])
+  @@index([type])
   @@index([created_at])
   @@index([customer_id])
-  @@index([supplier_id])
 }
 
 model LineItem {
@@ -458,8 +454,8 @@ model LineItem {
   transaction    Transaction @relation(fields: [transaction_id], references: [id], onDelete: Cascade)
 
   type        LineItemType
-  supplier_id String?
-  supplier    Supplier?    @relation(fields: [supplier_id], references: [id])
+  supplier_id String
+  supplier    Supplier    @relation(fields: [supplier_id], references: [id])
 
   // Basic Info
   category   String?

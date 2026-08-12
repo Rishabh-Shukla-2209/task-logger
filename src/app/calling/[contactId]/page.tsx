@@ -76,7 +76,7 @@ export default async function ClientHistoryPage({ params }: { params: Promise<{ 
             {contact.CallLogs.map(log => (
               <Card key={log.id}>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <div className="font-semibold">{format(new Date(log.created_at), "MMM d, yyyy h:mm a")}</div>
+                  <div className="font-semibold">{format(new Date(log.created_at), "dd/MM/yyyy h:mm a")}</div>
                   <Badge variant="outline">{formatStatus(log.status)}</Badge>
                 </CardHeader>
                 <CardContent>

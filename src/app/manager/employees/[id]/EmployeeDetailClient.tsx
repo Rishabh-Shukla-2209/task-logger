@@ -110,7 +110,7 @@ export function EmployeeDetailClient({ employee: initialEmployee }: { employee: 
                   <Card key={task.id} className="relative group flex flex-col h-full">
                     <CardHeader className="pb-2">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">{new Date(task.log_date).toLocaleDateString()}</span>
+                        <span className="text-sm text-muted-foreground">{new Date(task.log_date).toLocaleDateString("en-GB")}</span>
                         <div className="flex items-center gap-1">
                           <Button
                             variant="ghost"

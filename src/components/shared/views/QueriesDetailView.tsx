@@ -5,6 +5,8 @@ import { buttonVariants } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { redirect } from "next/navigation"
+import { updateServiceQuery } from "@/actions/queries"
+import { EditQueryDialog } from "@/components/coordinator/EditQueryDialog"
 
 const QUERY_STAGES = [
   "RECORDED",
@@ -61,6 +63,7 @@ export async function QueriesDetailView({
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Queries
           </Link>
         <h2 className="text-3xl font-bold tracking-tight">Query Details: {query.customer?.name}</h2>
+        {!isReadOnly && <EditQueryDialog initialData={query} updateAction={updateServiceQuery} />}
       </div>
 
       <div className="bg-card p-6 rounded-lg border shadow-sm grid md:grid-cols-2 gap-4">

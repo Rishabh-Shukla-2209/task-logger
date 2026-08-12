@@ -131,3 +131,41 @@ export async function reopenInternalRepair(repairId: string, remark: string) {
   revalidatePath(`/director/repairs/${repairId}`)
   revalidatePath("/director/repairs")
 }
+
+
+export async function updateInternalRepair(id: string, formData: FormData) {
+  const session = await getServerSession(authOptions)
+  if (!session || !["COORDINATOR", "MANAGER", "SUPERUSER"].includes(session.user.role)) {
+    throw new Error("Unauthorized")
+  }
+
+  const deviceDetails = formData.get("item_description") as string
+  const issue = formData.get("supplier_id") as string
+
+  if (!deviceDetails || !issue) throw new Error("Missing fields")
+
+  const rep = await prisma.internalRepair.findUnique({ where: { id } })
+  if (!rep) throw new Error("Repair not found")
+
+  await prisma.internalRepair.update({
+    where: { id },
+    data: {
+      item_description: deviceDetails,
+      supplier_id: issue,
+    },
+  })
+
+  await prisma.internalRepairEvent.create({
+    data: {
+      internal_repair_id: id,
+      user_id: session.user.id,
+      action: "Updated repair details",
+    },
+  })
+
+  revalidatePath("/coordinator/repairs")
+  revalidatePath("/manager/repairs")
+  revalidatePath("/director/repairs")
+  revalidatePath(`/coordinator/repairs/${id}`)
+}
+

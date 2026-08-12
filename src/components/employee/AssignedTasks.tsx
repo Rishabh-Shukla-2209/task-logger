@@ -36,7 +36,7 @@ export function AssignedTasks({ assignments }: { assignments: any[] }) {
                 </span>
                 {assignment.due_date && (
                   <span className="text-xs text-muted-foreground">
-                    Due: {new Date(assignment.due_date).toLocaleDateString()}
+                    Due: {new Date(assignment.due_date).toLocaleDateString("en-GB")}
                   </span>
                 )}
               </div>

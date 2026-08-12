@@ -124,3 +124,43 @@ export async function reopenQuotation(quotationId: string, remark: string) {
   revalidatePath(`/director/quotations/${quotationId}`)
   revalidatePath("/director/quotations")
 }
+
+
+export async function updateQuotation(id: string, formData: FormData) {
+  const session = await getServerSession(authOptions)
+  if (!session || !["COORDINATOR", "MANAGER", "SUPERUSER"].includes(session.user.role)) {
+    throw new Error("Unauthorized")
+  }
+
+  const customerId = formData.get("customer_id") as string
+  const description = formData.get("description") as string
+  const amountRaw = formData.get("amount") as string
+  
+  if (!customerId || !description) throw new Error("Missing fields")
+
+  const quote = await prisma.quotation.findUnique({ where: { id } })
+  if (!quote) throw new Error("Quotation not found")
+
+  await prisma.quotation.update({
+    where: { id },
+    data: {
+      customer_id: customerId,
+      description,
+      amount: amountRaw || null,
+    },
+  })
+
+  await prisma.quotationEvent.create({
+    data: {
+      quotation_id: id,
+      user_id: session.user.id,
+      action: "Updated quotation details",
+    },
+  })
+
+  revalidatePath("/coordinator/quotations")
+  revalidatePath("/manager/quotations")
+  revalidatePath("/director/quotations")
+  revalidatePath(`/coordinator/quotations/${id}`)
+}
+

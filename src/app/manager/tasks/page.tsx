@@ -48,7 +48,7 @@ export default async function ManagerTasksPage() {
                 <CardContent className="pt-6">
                   <div className="flex justify-between items-start mb-2">
                     <span className="text-sm text-muted-foreground">
-                      {task.log_date ? new Date(task.log_date).toLocaleDateString() : '-'}
+                      {task.log_date ? new Date(task.log_date).toLocaleDateString("en-GB") : '-'}
                     </span>
                     <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600">
                       {task.status}

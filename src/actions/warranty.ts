@@ -103,3 +103,45 @@ export async function addWarrantyExchangeRemark(warrantyId: string, remark: stri
   revalidatePath(`/director/warranty/${warrantyId}`)
   revalidatePath("/director/warranty")
 }
+
+
+export async function updateWarranty(id: string, formData: FormData) {
+  const session = await getServerSession(authOptions)
+  if (!session || !["COORDINATOR", "MANAGER", "SUPERUSER"].includes(session.user.role)) {
+    throw new Error("Unauthorized")
+  }
+
+  const supplierId = formData.get("supplier_id") as string
+  const deviceDetails = formData.get("device_details") as string
+  const reason = formData.get("reason") as string
+  const exchangeWith = formData.get("exchange_with") as string | null
+
+  if (!supplierId || !deviceDetails || !reason) throw new Error("Missing fields")
+
+  const w = await prisma.warrantyExchange.findUnique({ where: { id } })
+  if (!w) throw new Error("Warranty claim not found")
+
+  await prisma.warrantyExchange.update({
+    where: { id },
+    data: {
+      supplier_id: supplierId,
+      device_details: deviceDetails,
+      reason,
+      exchange_with: exchangeWith || null,
+    },
+  })
+
+  await prisma.warrantyExchangeEvent.create({
+    data: {
+      warranty_exchange_id: id,
+      user_id: session.user.id,
+      action: "Updated warranty details",
+    },
+  })
+
+  revalidatePath("/coordinator/warranty")
+  revalidatePath("/manager/warranty")
+  revalidatePath("/director/warranty")
+  revalidatePath(`/coordinator/warranty/${id}`)
+}
+

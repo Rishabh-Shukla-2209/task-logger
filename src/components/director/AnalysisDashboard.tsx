@@ -104,7 +104,7 @@ export function AnalysisDashboard() {
           ) : (
             data.map((row, i) => (
               <TableRow key={i}>
-                <TableCell>{new Date(row.date).toLocaleDateString()}</TableCell>
+                <TableCell>{new Date(row.date).toLocaleDateString("en-GB")}</TableCell>
                 <TableCell>{row.customer}</TableCell>
                 <TableCell>
                   <div className="font-medium">{row.category}</div>

@@ -173,7 +173,7 @@ export function SuperuserDashboardClient({ initialUsers }: { initialUsers: any[]
                   )}
                 </TableCell>
                 <TableCell className="text-muted-foreground text-sm">
-                  {new Date(user.created_at).toLocaleDateString()}
+                  {new Date(user.created_at).toLocaleDateString("en-GB")}
                 </TableCell>
                 <TableCell className="text-right space-x-2">
                   <Button 

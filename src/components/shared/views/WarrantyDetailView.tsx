@@ -5,6 +5,8 @@ import { buttonVariants } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { redirect } from "next/navigation"
+import { updateWarranty } from "@/actions/warranty"
+import { EditWarrantyDialog } from "@/components/coordinator/EditWarrantyDialog"
 
 const WARRANTY_STAGES = [
   "ADDED",

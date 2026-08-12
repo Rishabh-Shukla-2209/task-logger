@@ -85,7 +85,7 @@ export function LineItemRow({ item, index, transactionType, updateLineItem, remo
               <Input value={item.bundle_name || ""} onChange={e => updateLineItem(index, { bundle_name: e.target.value })} required readOnly={readOnly} />
             </div>
             <div className="space-y-2">
-              <Label>Supplier</Label>
+              <Label>Supplier <span className="text-red-500">*</span></Label>
               <EntityCombobox type="supplier" value={item.supplier_id || ""} onChange={(v) => updateLineItem(index, { supplier_id: v })} disabled={readOnly} />
             </div>
             <div className="space-y-2">
@@ -96,22 +96,141 @@ export function LineItemRow({ item, index, transactionType, updateLineItem, remo
               <Label>Total Price (per bundle)</Label>
               <Input type="number" min="0" step="0.01" value={item.total_price || 0} onChange={e => updateLineItem(index, { total_price: parseFloat(e.target.value) })} required readOnly={readOnly} />
             </div>
-            <div className="space-y-2 md:col-span-4">
-              <Label>Bundle Components (JSON mapping)</Label>
-              <textarea 
-                className="w-full h-24 p-2 border rounded-md text-sm font-mono" 
-                placeholder={'[{"category": "RAM", "model": "8GB", "type": "BULK", "quantity": 2}]'}
-                value={typeof item.bundle_components === 'string' ? item.bundle_components : JSON.stringify(item.bundle_components || [], null, 2)}
-                onChange={(e) => {
-                  try {
-                    const parsed = JSON.parse(e.target.value)
-                    updateLineItem(index, { bundle_components: parsed })
-                  } catch {
-                    updateLineItem(index, { bundle_components: e.target.value })
-                  }
-                }}
-                readOnly={readOnly}
-              />
+            <div className="space-y-4 md:col-span-4 border rounded-md p-4 bg-muted/20">
+              <div className="flex justify-between items-center">
+                <Label className="text-base font-semibold">Bundle Components</Label>
+                {!readOnly && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const current = Array.isArray(item.bundle_components) ? item.bundle_components : [];
+                      updateLineItem(index, {
+                        bundle_components: [...current, { category: "", model: "", type: "BULK", quantity: 1 }]
+                      })
+                    }}
+                  >
+                    + Add Component
+                  </Button>
+                )}
+              </div>
+              
+              {(() => {
+                let comps: any[] = [];
+                if (Array.isArray(item.bundle_components)) comps = item.bundle_components;
+                else if (typeof item.bundle_components === 'string') {
+                  try { comps = JSON.parse(item.bundle_components) } catch { comps = [] }
+                }
+                
+                return comps.length > 0 ? (
+                  <div className="space-y-3 mt-2">
+                    {comps.map((comp: any, compIdx: number) => (
+                    <div key={compIdx} className="grid grid-cols-12 gap-2 items-end border-b pb-3 border-border/50 last:border-0 last:pb-0">
+                      <div className="col-span-3">
+                        <Label className="text-xs text-muted-foreground">Category</Label>
+                        <Input 
+                          placeholder="e.g. RAM" 
+                          value={comp.category || ""}
+                          onChange={(e) => {
+                            const newComps = [...(item.bundle_components as any[])];
+                            newComps[compIdx].category = e.target.value;
+                            updateLineItem(index, { bundle_components: newComps });
+                          }}
+                          readOnly={readOnly}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <div className="col-span-3">
+                        <Label className="text-xs text-muted-foreground">Model</Label>
+                        <Input 
+                          placeholder="e.g. 8GB" 
+                          value={comp.model || ""}
+                          onChange={(e) => {
+                            const newComps = [...(item.bundle_components as any[])];
+                            newComps[compIdx].model = e.target.value;
+                            updateLineItem(index, { bundle_components: newComps });
+                          }}
+                          readOnly={readOnly}
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <Label className="text-xs text-muted-foreground">Type</Label>
+                        <Select
+                          disabled={readOnly}
+                          value={comp.type || "BULK"}
+                          onValueChange={(v) => {
+                            const newComps = [...(item.bundle_components as any[])];
+                            newComps[compIdx].type = v;
+                            updateLineItem(index, { bundle_components: newComps });
+                          }}
+                        >
+                          <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="BULK">BULK</SelectItem>
+                            <SelectItem value="SERIALIZED">SERIALIZED</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="col-span-3">
+                        <Label className="text-xs text-muted-foreground">
+                          {comp.type === "SERIALIZED" ? "Serial Nums (CSV)" : "Quantity"}
+                        </Label>
+                        {comp.type === "SERIALIZED" ? (
+                          <Input 
+                            placeholder="SN1, SN2" 
+                            value={comp.serial_numbers ? comp.serial_numbers.join(", ") : ""}
+                            onChange={(e) => {
+                              const newComps = [...(item.bundle_components as any[])];
+                              const raw = e.target.value;
+                              newComps[compIdx].serial_numbers = raw ? raw.split(",").map((s: string) => s.trim()).filter(Boolean) : [];
+                              updateLineItem(index, { bundle_components: newComps });
+                            }}
+                            readOnly={readOnly}
+                            className="h-8 text-sm"
+                          />
+                        ) : (
+                          <Input 
+                            type="number" 
+                            min="1" 
+                            value={comp.quantity || 1}
+                            onChange={(e) => {
+                              const newComps = [...(item.bundle_components as any[])];
+                              newComps[compIdx].quantity = parseInt(e.target.value) || 1;
+                              updateLineItem(index, { bundle_components: newComps });
+                            }}
+                            readOnly={readOnly}
+                            className="h-8 text-sm"
+                          />
+                        )}
+                      </div>
+                      {!readOnly && (
+                        <div className="col-span-1 flex justify-center pb-0.5">
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-red-500 h-8 w-8 p-0"
+                            onClick={() => {
+                              const newComps = [...(item.bundle_components as any[])];
+                              newComps.splice(compIdx, 1);
+                              updateLineItem(index, { bundle_components: newComps });
+                            }}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground italic py-2">
+                  No components added yet.
+                </div>
+              );
+              })()}
             </div>
           </>
         ) : (
@@ -127,7 +246,7 @@ export function LineItemRow({ item, index, transactionType, updateLineItem, remo
               />
             </div>
             <div className="space-y-2">
-              <Label>Supplier</Label>
+              <Label>Supplier <span className="text-red-500">*</span></Label>
               <EntityCombobox type="supplier" value={item.supplier_id || ""} onChange={(v) => updateLineItem(index, { supplier_id: v })} disabled={readOnly} />
             </div>
             

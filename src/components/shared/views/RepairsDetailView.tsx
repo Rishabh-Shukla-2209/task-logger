@@ -5,6 +5,8 @@ import { buttonVariants } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { redirect } from "next/navigation"
+import { updateInternalRepair } from "@/actions/repairs"
+import { EditRepairDialog } from "@/components/coordinator/EditRepairDialog"
 
 const REPAIR_STAGES = [
   "RECORDED",
@@ -65,7 +67,7 @@ export async function RepairsDetailView({
         </div>
         <div>
           <p className="text-sm text-muted-foreground">Sent Date</p>
-          <p className="font-semibold">{req.sent_date ? new Date(req.sent_date).toLocaleDateString() : "N/A"}</p>
+          <p className="font-semibold">{req.sent_date ? new Date(req.sent_date).toLocaleDateString("en-GB") : "N/A"}</p>
         </div>
       </div>
 

@@ -125,3 +125,43 @@ export async function addPartRequestRemark(requestId: string, remark: string) {
   revalidatePath(`/director/parts/${requestId}`)
   revalidatePath("/director/parts")
 }
+
+
+export async function updatePartRequest(id: string, formData: FormData) {
+  const session = await getServerSession(authOptions)
+  if (!session || !["COORDINATOR", "MANAGER", "SUPERUSER"].includes(session.user.role)) {
+    throw new Error("Unauthorized")
+  }
+
+  const partName = formData.get("part_name") as string
+  const customerId = formData.get("customer_id") as string
+  const supplierId = formData.get("supplier_id") as string | null
+
+  if (!partName || !customerId) throw new Error("Missing fields")
+
+  const r = await prisma.partRequest.findUnique({ where: { id } })
+  if (!r) throw new Error("Part request not found")
+
+  await prisma.partRequest.update({
+    where: { id },
+    data: {
+      part_name: partName,
+      customer_id: customerId,
+      supplier_id: supplierId || null,
+    },
+  })
+
+  await prisma.partRequestEvent.create({
+    data: {
+      part_request_id: id,
+      user_id: session.user.id,
+      action: "Updated part request details",
+    },
+  })
+
+  revalidatePath("/coordinator/parts")
+  revalidatePath("/manager/parts")
+  revalidatePath("/director/parts")
+  revalidatePath(`/coordinator/parts/${id}`)
+}
+

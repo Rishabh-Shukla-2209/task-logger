@@ -156,3 +156,48 @@ export async function reopenServiceQuery(queryId: string, remark: string) {
   revalidatePath(`/director/queries/${queryId}`)
   revalidatePath("/director/queries")
 }
+
+
+export async function updateServiceQuery(id: string, formData: FormData) {
+  const session = await getServerSession(authOptions)
+  if (!session || !["COORDINATOR", "MANAGER", "SUPERUSER"].includes(session.user.role)) {
+    throw new Error("Unauthorized")
+  }
+
+  const queryType = formData.get("query_type") as QueryType
+  const customerId = formData.get("customer_id") as string
+  const deviceDetails = formData.get("device_details") as string | null
+  const replacementReason = formData.get("replacement_reason") as string | null
+
+  if (!queryType || !customerId) throw new Error("Missing required fields")
+  if ((queryType === "SALE_REPLACEMENT" || queryType === "RENT_REPLACEMENT") && !replacementReason) {
+    throw new Error("Replacement Reason is mandatory for replacements")
+  }
+
+  const query = await prisma.serviceQuery.findUnique({ where: { id } })
+  if (!query) throw new Error("Query not found")
+
+  await prisma.serviceQuery.update({
+    where: { id },
+    data: {
+      query_type: queryType,
+      customer_id: customerId,
+      device_details: deviceDetails || null,
+      replacement_reason: replacementReason || null,
+    },
+  })
+
+  await prisma.queryEvent.create({
+    data: {
+      query_id: id,
+      user_id: session.user.id,
+      action: "Updated query details",
+    },
+  })
+
+  revalidatePath("/coordinator/queries")
+  revalidatePath("/manager/queries")
+  revalidatePath("/director/queries")
+  revalidatePath(`/coordinator/queries/${id}`)
+}
+

@@ -45,7 +45,7 @@ export function TransactionForm({
   const [loading, setLoading] = useState(false)
   const [type, setType] = useState<TransactionType>(transaction?.type || defaultType)
   const [customerId, setCustomerId] = useState<string>(transaction?.customer_id || "")
-  const [supplierId, setSupplierId] = useState<string>(transaction?.supplier_id || "")
+
   const [salespersonId, setSalespersonId] = useState<string>(transaction?.salesperson_id || "")
   
   const [lineItems, setLineItems] = useState<LineItemPayload[]>(transaction?.LineItems || [])
@@ -109,12 +109,6 @@ export function TransactionForm({
       window.scrollTo({ top: 0, behavior: "smooth" })
       return
     }
-    if (type === "SALE" && !supplierId) {
-      setFormError("Source (Supplier) is mandatory for a Sale transaction.")
-      setLoading(false)
-      window.scrollTo({ top: 0, behavior: "smooth" })
-      return
-    }
     if (type === "SALE" && (!salespersonId || salespersonId === "none")) {
       setFormError("Salesperson is mandatory for a Sale transaction.")
       setLoading(false)
@@ -128,11 +122,19 @@ export function TransactionForm({
       return
     }
 
+    const missingSupplier = lineItems.some(li => !li.supplier_id || li.supplier_id === "none")
+    if (missingSupplier) {
+      setFormError("Supplier is mandatory for all line items.")
+      setLoading(false)
+      window.scrollTo({ top: 0, behavior: "smooth" })
+      return
+    }
+
     try {
       const payload = {
         type,
         customer_id: customerId || undefined,
-        supplier_id: supplierId || undefined,
+
         salesperson_id: salespersonId || undefined,
         total_value: totalValue,
         amount_paid: type === "RENT" ? totalValue : amountPaid,
@@ -251,13 +253,6 @@ export function TransactionForm({
             <div className="space-y-2">
               <Label>Customer (Optional)</Label>
               <EntityCombobox type="customer" value={customerId} onChange={setCustomerId} disabled={readOnlyCore} />
-            </div>
-          )}
-
-          {(type === "PURCHASE" || type === "REPLACEMENT" || type === "SALE" || (type === "RETURN" && returnType === "PURCHASE")) && (
-            <div className="space-y-2">
-              <Label>{type === "SALE" ? "Source (Supplier)" : "Supplier (Optional)"}</Label>
-              <EntityCombobox type="supplier" value={supplierId} onChange={setSupplierId} disabled={readOnlyCore} />
             </div>
           )}
 

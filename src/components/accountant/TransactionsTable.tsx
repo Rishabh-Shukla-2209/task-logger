@@ -123,7 +123,7 @@ export function TransactionsTable({
   const uniqueSuppliers = useMemo(() => {
     const set = new Set<string>()
     transactions.forEach(tx => {
-      if (tx.supplier?.name) set.add(tx.supplier.name)
+
       tx.LineItems?.forEach((li: any) => {
         if (li.supplier?.name) set.add(li.supplier.name)
       })
@@ -145,11 +145,8 @@ export function TransactionsTable({
       const matchCustomer = filterCustomer.length === 0 || filterCustomer.includes(tx.customer?.name)
       const matchSalesperson = filterSalesperson.length === 0 || filterSalesperson.includes(tx.salesperson?.name)
       
-      const txSupplierName = tx.supplier?.name
       const liSupplierNames = tx.LineItems?.map((li: any) => li.supplier?.name).filter(Boolean) || []
-      const matchSupplier = filterSupplier.length === 0 || 
-        (txSupplierName && filterSupplier.includes(txSupplierName)) || 
-        liSupplierNames.some((n: string) => filterSupplier.includes(n))
+      const matchSupplier = filterSupplier.length === 0 || liSupplierNames.some((n: string) => filterSupplier.includes(n))
 
       const matchModel = filterModel.length === 0 || tx.LineItems?.some((li: any) => filterModel.includes(li.item_model))
       const matchProcessor = filterProcessor.length === 0 || tx.LineItems?.some((li: any) => filterProcessor.includes(li.processor))
@@ -348,6 +345,7 @@ export function TransactionsTable({
                         if (li.ram_gb) parts.push(`${li.ram_gb}GB`)
                         if (li.ssd_gb) parts.push(`${li.ssd_gb}GB`)
                         if (li.screen_size) parts.push(li.screen_size)
+                        if (li.peripheral_item) parts.push(li.peripheral_item)
                         
                         return (
                           <div key={li.id} className="text-sm font-medium">
@@ -358,7 +356,10 @@ export function TransactionsTable({
                     </div>
                   </TableCell>
                   <TableCell className="align-top font-medium">
-                    {tx.customer?.name || tx.supplier?.name || "N/A"}
+                    {tx.customer?.name || 
+                     (tx.LineItems?.some((li: any) => li.supplier) 
+                        ? Array.from(new Set(tx.LineItems.map((li: any) => li.supplier?.name).filter(Boolean))).join(", ") 
+                        : "N/A")}
                   </TableCell>
                   <TableCell className="align-top text-right whitespace-nowrap">
                     <div className="flex flex-col space-y-3">

@@ -30,7 +30,7 @@ export default async function TransactionDetailPage({ params }: { params: Promis
     }
   })
 
-  if (!tx || tx.is_deleted) {
+  if (!tx) {
     return <div className="text-center py-20">Transaction not found.</div>
   }
 
@@ -54,7 +54,7 @@ export default async function TransactionDetailPage({ params }: { params: Promis
             <div>
               <h1 className="text-3xl font-bold tracking-tight uppercase">{tx.type} INVOICE</h1>
               <p className="text-muted-foreground mt-1">ID: {tx.id}</p>
-              <p className="text-muted-foreground">Date: {new Date(tx.created_at).toLocaleDateString()}</p>
+              <p className="text-muted-foreground">Date: {new Date(tx.created_at).toLocaleDateString("en-GB")}</p>
             </div>
             <div className="text-right">
               <Badge variant={

@@ -89,7 +89,9 @@ export function SingleAnalysis({
           <TableHeader className="bg-muted/50">
             <TableRow>
               {detailCols.map(col => <TableHead key={col} className="h-8 py-1">{col}</TableHead>)}
-              <TableHead className="text-right h-8 py-1">Quantity</TableHead>
+              {!(groupBy === "customer" || groupBy === "salesperson" || groupBy === "vendor" || groupBy === "pending_payment") && (
+                <TableHead className="text-right h-8 py-1">Quantity</TableHead>
+              )}
               <TableHead className="text-right h-8 py-1">Pending Amount</TableHead>
             </TableRow>
           </TableHeader>
@@ -170,7 +172,9 @@ export function SingleAnalysis({
                   </>
                 )}
 
-                <TableCell className="text-right py-2 align-top">{d.quantity}</TableCell>
+                {!(groupBy === "customer" || groupBy === "salesperson" || groupBy === "vendor" || groupBy === "pending_payment") && (
+                  <TableCell className="text-right py-2 align-top">{d.quantity}</TableCell>
+                )}
                 <TableCell className="text-right font-medium text-emerald-600 py-2 align-top">₹{(d.amount || 0).toFixed(2)}</TableCell>
               </TableRow>
             ))}
@@ -189,7 +193,9 @@ export function SingleAnalysis({
             {columns.map(col => (
               <TableHead key={col.key}>{col.label}</TableHead>
             ))}
-            <TableHead className="text-right">Quantity</TableHead>
+            {!(salesGroupBy === "customer" || salesGroupBy === "salesperson" || salesGroupBy === "source" || salesGroupBy === "pending_payment") && (
+              <TableHead className="text-right">Quantity</TableHead>
+            )}
             <TableHead className="text-right">{salesGroupBy === "pending_payment" ? "Pending Amount" : "Total Value"}</TableHead>
           </TableRow>
         </TableHeader>
@@ -213,7 +219,9 @@ export function SingleAnalysis({
                     </TableCell>
                   )}
                   <TableCell className="font-medium">{row.name || "N/A"}</TableCell>
-                  <TableCell className="text-right">{row.quantity}</TableCell>
+                  {!(salesGroupBy === "customer" || salesGroupBy === "salesperson" || salesGroupBy === "source" || salesGroupBy === "pending_payment") && (
+                    <TableCell className="text-right">{row.quantity}</TableCell>
+                  )}
                   <TableCell className="text-right font-medium text-emerald-600">₹{(row.total_value || 0).toFixed(2)}</TableCell>
                 </TableRow>
                 {type === "SALE" && expandedRowId === row.name && (
@@ -262,7 +270,7 @@ export function SingleAnalysis({
           ) : (
             data.map((row, i) => (
               <TableRow key={i}>
-                <TableCell>{new Date(row.date).toLocaleDateString()}</TableCell>
+                <TableCell>{new Date(row.date).toLocaleDateString("en-GB")}</TableCell>
                 <TableCell>{row.customer}</TableCell>
                 <TableCell>
                   <div className="font-medium">{row.category}</div>

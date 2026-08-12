@@ -121,7 +121,7 @@ export function AssignmentBrowser({ userId = "self" }: { userId?: string }) {
           <Popover>
             <PopoverTrigger className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 w-full md:w-auto text-left font-normal cursor-pointer">
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {startDate ? format(startDate, "PPP") : <span>Start due date</span>}
+              {startDate ? format(startDate, "dd/MM/yyyy") : <span>Start due date</span>}
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
               <Calendar mode="single" selected={startDate} onSelect={setStartDate} />
@@ -130,7 +130,7 @@ export function AssignmentBrowser({ userId = "self" }: { userId?: string }) {
           <Popover>
             <PopoverTrigger className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 w-full md:w-auto text-left font-normal cursor-pointer">
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {endDate ? format(endDate, "PPP") : <span>End due date</span>}
+              {endDate ? format(endDate, "dd/MM/yyyy") : <span>End due date</span>}
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
               <Calendar mode="single" selected={endDate} onSelect={setEndDate} />
@@ -166,7 +166,7 @@ export function AssignmentBrowser({ userId = "self" }: { userId?: string }) {
                   {assignment.due_date && (
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      {new Date(assignment.due_date).toLocaleDateString()}
+                      {new Date(assignment.due_date).toLocaleDateString("en-GB")}
                     </span>
                   )}
                 </div>

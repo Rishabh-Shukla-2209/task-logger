@@ -5,6 +5,8 @@ import { buttonVariants } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { redirect } from "next/navigation"
+import { updatePartRequest } from "@/actions/parts"
+import { EditPartDialog } from "@/components/coordinator/EditPartDialog"
 
 const PART_STAGES = [
   "RECORDED",

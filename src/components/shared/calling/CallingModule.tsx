@@ -182,7 +182,7 @@ export function CallingModule({ userId }: { userId: string }) {
                           <TableCell className="font-medium">{contact.name}</TableCell>
                           <TableCell>{contact.phone}</TableCell>
                           <TableCell>{contact.location || "-"}</TableCell>
-                          <TableCell>{format(new Date(contact.created_at), "MMM d, yyyy")}</TableCell>
+                          <TableCell>{format(new Date(contact.created_at), "dd/MM/yyyy")}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <LogCallDialog 
@@ -269,7 +269,7 @@ export function CallingModule({ userId }: { userId: string }) {
                     ) : (
                       summaryLogs.map((sum) => (
                         <TableRow key={sum.date}>
-                          <TableCell className="font-medium whitespace-nowrap">{format(new Date(sum.date), "MMM d, yyyy")}</TableCell>
+                          <TableCell className="font-medium whitespace-nowrap">{format(new Date(sum.date), "dd/MM/yyyy")}</TableCell>
                           <TableCell className="text-center font-bold">{sum.total}</TableCell>
                           <TableCell className="text-center">{sum.SOLD}</TableCell>
                           <TableCell className="text-center">{sum.FOLLOW_UP}</TableCell>
@@ -315,7 +315,7 @@ export function CallingModule({ userId }: { userId: string }) {
                       logs.map((log) => (
                         <TableRow key={log.id}>
                           <TableCell className="whitespace-nowrap">
-                            {format(new Date(log.created_at), "MMM d, yyyy h:mm a")}
+                            {format(new Date(log.created_at), "dd/MM/yyyy h:mm a")}
                           </TableCell>
                           <TableCell>
                             <div className="font-medium">{log.contact?.name}</div>

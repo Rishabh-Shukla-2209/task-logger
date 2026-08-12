@@ -161,7 +161,7 @@ export function TaskHistoryBrowser({ userId = "self", status }: { userId?: strin
           <Popover>
             <PopoverTrigger className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 w-full md:w-auto text-left font-normal">
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {startDate ? format(startDate, "PPP") : <span>Start date</span>}
+              {startDate ? format(startDate, "dd/MM/yyyy") : <span>Start date</span>}
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
               <Calendar mode="single" selected={startDate} onSelect={setStartDate} />
@@ -170,7 +170,7 @@ export function TaskHistoryBrowser({ userId = "self", status }: { userId?: strin
           <Popover>
             <PopoverTrigger className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 w-full md:w-auto text-left font-normal">
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {endDate ? format(endDate, "PPP") : <span>End date</span>}
+              {endDate ? format(endDate, "dd/MM/yyyy") : <span>End date</span>}
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
               <Calendar mode="single" selected={endDate} onSelect={setEndDate} />
@@ -196,7 +196,7 @@ export function TaskHistoryBrowser({ userId = "self", status }: { userId?: strin
         {groupedTasks.map((group) => (
           <div key={group.date} className="space-y-4">
             <h3 className="font-semibold text-lg text-foreground/80 sticky top-0 bg-background/95 py-2 z-10 backdrop-blur">
-              {format(new Date(group.date), "EEEE, MMMM d, yyyy")}
+              {format(new Date(group.date), "dd/MM/yyyy")}
             </h3>
             <div className="grid gap-4">
               {group.tasks.map(task => (

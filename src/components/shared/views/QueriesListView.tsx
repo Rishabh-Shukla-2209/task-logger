@@ -110,7 +110,7 @@ export async function QueriesListView({
                       {query.status.replace(/_/g, " ")}
                     </Badge>
                   </TableCell>
-                  <TableCell>{new Date(query.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell>{new Date(query.created_at).toLocaleDateString("en-GB")}</TableCell>
                   <TableCell>
                     <Link href={`${basePath}/${query.id}`} className={buttonVariants({ variant: "ghost", size: "sm", className: "cursor-pointer" })}>
                       

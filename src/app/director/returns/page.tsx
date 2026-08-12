@@ -20,7 +20,7 @@ export default async function ReturnsPage({ searchParams }: { searchParams: Prom
     end = defaultRange.end;
   }
 
-  const where: any = { type: "RETURN", is_deleted: false };
+  const where: any = { type: "RETURN", };
   let startDate, endDate;
   if (start && end) {
     startDate = new Date(`${start}T00:00:00.000Z`);
@@ -41,6 +41,7 @@ export default async function ReturnsPage({ searchParams }: { searchParams: Prom
       amount_paid: true,
       pending_amount: true,
       payment_status: true,
+      payment_account: true,
       remark: true,
       return_type: true,
       rent_start_date: true,
@@ -57,6 +58,7 @@ export default async function ReturnsPage({ searchParams }: { searchParams: Prom
           serial_numbers: true,
           price_per_unit: true,
           total_price: true,
+          peripheral_item: true,
           defect: true,
           replacement_reason: true,
           replaced_with: true,

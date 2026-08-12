@@ -5,6 +5,8 @@ import { buttonVariants } from "@/components/ui/button"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { redirect } from "next/navigation"
+import { updateQuotation } from "@/actions/quotations"
+import { EditQuotationDialog } from "@/components/coordinator/EditQuotationDialog"
 
 const QUOTATION_STAGES = [
   "RECORDED",

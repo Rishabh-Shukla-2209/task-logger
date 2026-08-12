@@ -299,7 +299,7 @@ export function AuditableWorkflow({
                     <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-card p-4 rounded border shadow-sm">
                       <div className="flex flex-col gap-1 mb-1">
                         <p className="font-semibold text-sm">{event.user.username}</p>
-                        <time className="text-xs text-muted-foreground">{format(new Date(event.created_at), "MMM d, HH:mm")}</time>
+                        <time className="text-xs text-muted-foreground">{format(new Date(event.created_at), "dd/MM/yyyy HH:mm")}</time>
                       </div>
                       <div className="text-sm font-medium mb-1">{event.action}</div>
                       {event.remark && (

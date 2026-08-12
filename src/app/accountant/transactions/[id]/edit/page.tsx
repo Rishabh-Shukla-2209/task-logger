@@ -19,7 +19,7 @@ export default async function EditTransactionPage({ params }: { params: Promise<
     }
   })
 
-  if (!transaction || transaction.is_deleted) {
+  if (!transaction) {
     return <div className="text-center py-20">Transaction not found.</div>
   }
 

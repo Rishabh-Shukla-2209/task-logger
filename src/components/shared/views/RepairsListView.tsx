@@ -95,7 +95,7 @@ export async function RepairsListView({
                 <TableRow key={r.id}>
                   <TableCell className="font-medium max-w-[150px] truncate sm:max-w-[200px] md:max-w-[300px]" title={r.item_description}>{r.item_description}</TableCell>
                   <TableCell className="max-w-[100px] truncate sm:max-w-[150px]" title={r.supplier.name}>{r.supplier.name}</TableCell>
-                  <TableCell>{new Date(r.sent_date).toLocaleDateString()}</TableCell>
+                  <TableCell>{new Date(r.sent_date).toLocaleDateString("en-GB")}</TableCell>
                   <TableCell>
                     <Badge variant={["READY", "SCRAPPED", "DROPPED"].includes(r.status) ? "default" : "secondary"}>
                       {r.status.replace(/_/g, " ")}

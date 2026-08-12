@@ -19,7 +19,7 @@ export type LineItemPayload = {
   bundle_components?: any
   price_per_unit?: number
   total_price?: number
-  
+
   make?: string
   processor?: string
   generation?: string
@@ -32,7 +32,7 @@ export type LineItemPayload = {
   ram_type?: string
   storage_type?: string
   peripheral_item?: string
-  
+
   defect?: string
   replacement_reason?: string
   replaced_with?: string
@@ -41,7 +41,7 @@ export type LineItemPayload = {
 export type TransactionPayload = {
   type: TransactionType
   customer_id?: string
-  supplier_id?: string
+
   salesperson_id?: string
   total_value: number
   amount_paid: number
@@ -65,7 +65,7 @@ export async function createTransaction(data: TransactionPayload) {
     data: {
       type: data.type,
       customer_id: data.customer_id,
-      supplier_id: data.supplier_id,
+
       salesperson_id: data.salesperson_id,
       accountant_id: session.user.id,
       total_value: data.total_value,
@@ -102,7 +102,7 @@ export async function createTransaction(data: TransactionPayload) {
           ram_type: item.ram_type,
           storage_type: item.storage_type,
           peripheral_item: item.peripheral_item,
-          
+
           defect: item.defect,
           replacement_reason: item.replacement_reason,
           replaced_with: item.replaced_with,
@@ -129,7 +129,7 @@ export async function fetchTransactions({
 
   const transactions = await prisma.transaction.findMany({
     where: {
-      is_deleted: false,
+
       ...(type ? { type } : {}),
       ...(payment_status ? { payment_status } : {})
     },
@@ -162,7 +162,7 @@ export async function fetchTransactionById(id: string) {
     }
   })
 
-  if (transaction?.is_deleted) return null
+
   return transaction
 }
 
@@ -177,7 +177,7 @@ export async function updateTransaction(id: string, data: TransactionPayload) {
     include: { LineItems: true }
   })
 
-  if (!existingTransaction || existingTransaction.is_deleted) {
+  if (!existingTransaction) {
     throw new Error("Transaction not found")
   }
 
@@ -203,7 +203,7 @@ export async function updateTransaction(id: string, data: TransactionPayload) {
       data: {
         type: data.type,
         customer_id: data.customer_id,
-        supplier_id: data.supplier_id,
+
         salesperson_id: data.salesperson_id,
         total_value: data.total_value,
         amount_paid: data.amount_paid,
@@ -257,14 +257,11 @@ export async function updateTransaction(id: string, data: TransactionPayload) {
 
 export async function deleteTransaction(id: string) {
   const session = await getServerSession(authOptions)
-  if (!session || !["SUPERUSER"].includes(session.user.role)) {
+  if (!session || !["SUPERUSER", "MANAGER", "ACCOUNTANT"].includes(session.user.role)) {
     throw new Error("Unauthorized")
   }
 
-  await prisma.transaction.update({
-    where: { id },
-    data: { is_deleted: true }
-  })
+  await prisma.transaction.delete({ where: { id } })
 
   revalidatePath("/accountant/transactions")
   revalidatePath("/manager/transactions")

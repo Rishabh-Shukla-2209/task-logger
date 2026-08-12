@@ -222,7 +222,7 @@ export function EntityCombobox({ type, supplierType, value, onChange, placeholde
                 <div className="space-y-2">
                   <Label>Salesperson <span className="text-red-500">*</span></Label>
                   <Select value={newUserId} onValueChange={(v: any) => setNewUserId(v)}>
-                    <SelectTrigger><SelectValue placeholder="Select Salesperson" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Select Salesperson">{newUserId ? users.find(u => u.id === newUserId)?.username : undefined}</SelectValue></SelectTrigger>
                     <SelectContent>
                       {users.map(u => (
                         <SelectItem key={u.id} value={u.id}>

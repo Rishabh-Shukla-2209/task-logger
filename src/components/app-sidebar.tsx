@@ -221,6 +221,7 @@ export function AppSidebar({ role }: { role: string }) {
         items: [
           { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
           { title: "Client Calling", url: "/admin/calling", icon: PhoneCall },
+          { title: "My Assignments", url: "/admin/assignments", icon: FileText },
           { title: "Task History", url: "/admin/history", icon: History },
         ],
       },

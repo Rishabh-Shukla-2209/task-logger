@@ -18,7 +18,7 @@ export default async function RentPage({ searchParams }: { searchParams: Promise
     end = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
   }
 
-  const where: any = { type: "RENT", is_deleted: false };
+  const where: any = { type: "RENT", };
   let startDate, endDate;
   if (start && end) {
     startDate = new Date(`${start}T00:00:00.000Z`);
@@ -39,6 +39,7 @@ export default async function RentPage({ searchParams }: { searchParams: Promise
       amount_paid: true,
       pending_amount: true,
       payment_status: true,
+      payment_account: true,
       remark: true,
       return_type: true,
       rent_start_date: true,
@@ -55,6 +56,7 @@ export default async function RentPage({ searchParams }: { searchParams: Promise
           serial_numbers: true,
           price_per_unit: true,
           total_price: true,
+          peripheral_item: true,
           defect: true,
           replacement_reason: true,
           replaced_with: true,

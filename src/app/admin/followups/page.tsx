@@ -86,7 +86,7 @@ export default async function AdminFollowupsPage({ searchParams }: { searchParam
                       <TableCell className="max-w-[200px] truncate text-muted-foreground">
                         {f.Events[0]?.remark || "No remarks"}
                       </TableCell>
-                      <TableCell>{new Date(f.created_at).toLocaleDateString()}</TableCell>
+                      <TableCell>{new Date(f.created_at).toLocaleDateString("en-GB")}</TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="sm" render={<Link href={`/admin/followups/${f.id}`} />}>
                           <Eye className="h-4 w-4 mr-2" />
