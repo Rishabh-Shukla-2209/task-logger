@@ -13,10 +13,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function ContactDialog({
+  employees,
   onSuccess,
 }: {
+  employees: {id: string, username: string}[];
   onSuccess: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -26,9 +35,12 @@ export function ContactDialog({
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [location, setLocation] = useState("");
+  const [dataOwnerId, setDataOwnerId] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!dataOwnerId) return toast.error("Please select a Data Owner");
+    
     setIsLoading(true);
 
     try {
@@ -41,6 +53,7 @@ export function ContactDialog({
           name,
           phone,
           location,
+          data_owner_id: dataOwnerId
           // Not handling customer_id linking directly here yet, but backend supports it
         }),
       });
@@ -55,6 +68,7 @@ export function ContactDialog({
       setName("");
       setPhone("");
       setLocation("");
+      setDataOwnerId("");
       toast.success("Contact added successfully!");
       onSuccess();
     } catch (error) {
@@ -102,15 +116,35 @@ export function ContactDialog({
               id="location"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              placeholder="e.g. New York"
+              placeholder="e.g. New Delhi"
             />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="dataOwner">Data Owner *</Label>
+            <Select value={dataOwnerId} onValueChange={(val) => setDataOwnerId(val as string)} required>
+              <SelectTrigger id="dataOwner">
+                <SelectValue placeholder="Select Data Owner">
+                  {employees.find(e => e.id === dataOwnerId)?.username || "Select Data Owner"}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {employees.map(emp => (
+                  <SelectItem key={emp.id} value={emp.id}>{emp.username}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading || !dataOwnerId}>
               {isLoading ? "Saving..." : "Save Contact"}
             </Button>
           </DialogFooter>

@@ -143,7 +143,8 @@ model User {
 
   PaymentFollowupEvents PaymentFollowupEvent[]
   CallLogs              CallLog[]
-  CallContacts          CallContact[]
+  CallContactsUser      CallContact[] @relation("CallContactUser")
+  CallContactsDataOwner CallContact[] @relation("CallContactDataOwner")
   Customers             Customer[]
 }
 
@@ -551,9 +552,11 @@ model PaymentFollowupEvent {
 
 model CallContact {
   id          String    @id @default(uuid())
-  user_id     String
-  user        User      @relation(fields: [user_id], references: [id])
-  name        String
+  user_id       String
+  user          User      @relation("CallContactUser", fields: [user_id], references: [id])
+  data_owner_id String?   // Made optional temporarily for seamless migration, then we'll make it mandatory if needed (or just keep it optional and enforce in code). Wait, since I'm backfilling, I can make it String? first, run migration, then backfill, then make String. No, I can't do that safely on prod DB without losing data if I drop. The easiest way is to add it as String with a default, or make it String? and backfill. Let's use String? first.
+  data_owner    User?     @relation("CallContactDataOwner", fields: [data_owner_id], references: [id])
+  name          String
   phone       String
   location    String?
   customer_id String?
@@ -573,8 +576,9 @@ model CallLog {
   contact     CallContact @relation(fields: [contact_id], references: [id], onDelete: Cascade)
   user_id     String
   user        User        @relation(fields: [user_id], references: [id])
-  status      CallStatus
-  remark      String?
+  status        CallStatus
+  followup_date DateTime? // Added for FOLLOW_UP status
+  remark        String?
   requirement String?
   price_given Float?
   price_asked Float?

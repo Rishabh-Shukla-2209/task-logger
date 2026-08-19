@@ -8,7 +8,15 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Filter, FilterX } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-export function DateFilter({ defaultStart, defaultEnd }: { defaultStart?: string, defaultEnd?: string }) {
+export function DateFilter({ 
+  defaultStart, 
+  defaultEnd,
+  children 
+}: { 
+  defaultStart?: string, 
+  defaultEnd?: string,
+  children?: React.ReactNode 
+}) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const pathname = usePathname()
@@ -99,7 +107,13 @@ export function DateFilter({ defaultStart, defaultEnd }: { defaultStart?: string
               </div>
             </div>
             
-            <div className="flex justify-end gap-2 mt-2">
+            {children && (
+              <div className="pt-2 border-t mt-2">
+                {children}
+              </div>
+            )}
+
+            <div className="flex items-center justify-end gap-2 mt-2">
               <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
                 Cancel
               </Button>

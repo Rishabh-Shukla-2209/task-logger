@@ -4,10 +4,10 @@ import { redirect } from "next/navigation"
 import { CallingModule } from "@/components/shared/calling/CallingModule"
 import prisma from "@/lib/prisma"
 
-export default async function AdminCallingPage() {
+export default async function ManagerCallingPage() {
   const session = await getServerSession(authOptions)
 
-  if (!session || session.user.role !== "ADMIN") {
+  if (!session || session.user.role !== "MANAGER") {
     redirect("/")
   }
 
@@ -28,7 +28,7 @@ export default async function AdminCallingPage() {
 
   return (
     <div className="max-w-7xl mx-auto">
-      <CallingModule userId={session.user.id} employees={employees} />
+      <CallingModule userId={session.user.id} employees={employees} readOnly={true} />
     </div>
   )
 }

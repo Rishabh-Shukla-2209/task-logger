@@ -27,15 +27,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DateFilter } from "@/components/DateFilter";
-import { format } from "date-fns";
+import { format, isBefore, startOfDay } from "date-fns";
 import { useSearchParams } from "next/navigation";
 
-export function CallingModule({ userId }: { userId: string }) {
+export function CallingModule({ 
+  userId, 
+  employees,
+  readOnly = false 
+}: { 
+  userId: string, 
+  employees: {id: string, username: string}[],
+  readOnly?: boolean 
+}) {
   const [activeTab, setActiveTab] = useState("contacts");
   
   // Contacts state
   const [contacts, setContacts] = useState<any[]>([]);
   const [contactSearch, setContactSearch] = useState("");
+  const [ownerFilter, setOwnerFilter] = useState<string>("ALL");
   const [isLoadingContacts, setIsLoadingContacts] = useState(false);
 
   // History state
@@ -55,6 +64,15 @@ export function CallingModule({ userId }: { userId: string }) {
       if (contactSearch) {
         url.searchParams.set("search", contactSearch);
       }
+      if (ownerFilter && ownerFilter !== "ALL") {
+        url.searchParams.set("ownerId", ownerFilter);
+      }
+      if (startDateStr) {
+        url.searchParams.set("startDate", startDateStr);
+      }
+      if (endDateStr) {
+        url.searchParams.set("endDate", endDateStr);
+      }
       const res = await fetch(url.toString());
       if (res.ok) {
         const data = await res.json();
@@ -65,7 +83,7 @@ export function CallingModule({ userId }: { userId: string }) {
     } finally {
       setIsLoadingContacts(false);
     }
-  }, [contactSearch]);
+  }, [contactSearch, ownerFilter]);
 
   const fetchLogs = useCallback(async () => {
     setIsLoadingLogs(true);
@@ -112,7 +130,7 @@ export function CallingModule({ userId }: { userId: string }) {
     } else if (activeTab === "history") {
       fetchLogs();
     }
-  }, [activeTab, fetchContacts, fetchLogs]);
+  }, [activeTab, fetchContacts, fetchLogs, startDateStr, endDateStr]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,6 +140,19 @@ export function CallingModule({ userId }: { userId: string }) {
   const formatStatus = (status: string) => {
     return status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   };
+
+  // Compute followups
+  const todayStart = startOfDay(new Date());
+  const followups = contacts.filter((c) => {
+    if (!c.CallLogs || c.CallLogs.length === 0) return false;
+    const latestLog = c.CallLogs[0];
+    if (latestLog.status !== "FOLLOW_UP") return false;
+    if (!latestLog.followup_date) return false;
+    const fDate = new Date(latestLog.followup_date);
+    // If followup date is today or before today, they need to be called
+    return fDate.getTime() <= todayStart.getTime() || 
+           (fDate.getFullYear() === todayStart.getFullYear() && fDate.getMonth() === todayStart.getMonth() && fDate.getDate() === todayStart.getDate());
+  });
 
   return (
     <div className="space-y-6">
@@ -137,14 +168,76 @@ export function CallingModule({ userId }: { userId: string }) {
         </TabsList>
 
         <TabsContent value="contacts">
+          {followups.length > 0 && (
+            <Card className="border-destructive/50 shadow-sm mb-6">
+              <CardHeader className="bg-destructive/10 pb-4 border-b border-destructive/20">
+                <CardTitle className="text-lg font-bold flex items-center gap-2">
+                  <div className="h-2 w-2 bg-destructive rounded-full animate-pulse" />
+                  Today's Follow-ups ({followups.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>Scheduled For</TableHead>
+                        <TableHead>Data Owner</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {followups.map((contact) => {
+                        const latestLog = contact.CallLogs[0];
+                        const fDate = new Date(latestLog.followup_date);
+                        const isPastDue = isBefore(fDate, todayStart);
+                        return (
+                          <TableRow key={contact.id} className="bg-background">
+                            <TableCell className="font-medium">{contact.name}</TableCell>
+                            <TableCell>{contact.phone}</TableCell>
+                            <TableCell>
+                              {isPastDue ? (
+                                <Badge variant="destructive">Past Due: {format(fDate, "dd/MM/yyyy")}</Badge>
+                              ) : (
+                                <Badge variant="secondary">Today</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>{contact.data_owner?.username}</TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                              {!readOnly && (
+                                <LogCallDialog 
+                                  contactId={contact.id}
+                                  contactName={contact.name}
+                                  userId={userId}
+                                  onSuccess={fetchContacts}
+                                />
+                              )}
+                                <Link href={`/calling/${contact.id}`} className={buttonVariants({ variant: "ghost", size: "sm" })}>
+                                  History
+                                </Link>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-xl font-bold">Contacts List</CardTitle>
-              <ContactDialog onSuccess={fetchContacts} />
+              {!readOnly && <ContactDialog employees={employees} onSuccess={fetchContacts} />}
             </CardHeader>
             <CardContent>
-              <div className="flex items-center space-x-2 py-4">
-                <form onSubmit={handleSearchSubmit} className="flex flex-1 max-w-sm space-x-2">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 py-4">
+                <form onSubmit={handleSearchSubmit} className="flex flex-1 w-full max-w-sm space-x-2">
                   <Input
                     placeholder="Search name or phone..."
                     value={contactSearch}
@@ -154,6 +247,27 @@ export function CallingModule({ userId }: { userId: string }) {
                     <Search className="h-4 w-4" />
                   </Button>
                 </form>
+                
+                <div>
+                  <DateFilter>
+                    <div className="flex flex-col gap-1.5 mt-2">
+                      <label className="text-xs font-medium text-muted-foreground">Data Owner</label>
+                      <Select value={ownerFilter} onValueChange={(val) => setOwnerFilter(val as string)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Filter by Data Owner">
+                            {ownerFilter === "ALL" ? "All Owners" : employees.find(e => e.id === ownerFilter)?.username || "Filter by Data Owner"}
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ALL">All Owners</SelectItem>
+                          {employees.map(emp => (
+                            <SelectItem key={emp.id} value={emp.id}>{emp.username}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </DateFilter>
+                </div>
               </div>
 
               <div className="rounded-md border">
@@ -164,17 +278,18 @@ export function CallingModule({ userId }: { userId: string }) {
                       <TableHead>Phone</TableHead>
                       <TableHead>Location</TableHead>
                       <TableHead>Added On</TableHead>
+                      <TableHead>Data Owner</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {isLoadingContacts ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center">Loading...</TableCell>
+                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Loading...</TableCell>
                       </TableRow>
                     ) : contacts.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center text-muted-foreground">No contacts found</TableCell>
+                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No contacts found</TableCell>
                       </TableRow>
                     ) : (
                       contacts.map((contact) => (
@@ -183,16 +298,17 @@ export function CallingModule({ userId }: { userId: string }) {
                           <TableCell>{contact.phone}</TableCell>
                           <TableCell>{contact.location || "-"}</TableCell>
                           <TableCell>{format(new Date(contact.created_at), "dd/MM/yyyy")}</TableCell>
+                          <TableCell>{contact.data_owner?.username}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
-                              <LogCallDialog 
-                                contactId={contact.id}
-                                contactName={contact.name}
-                                userId={userId}
-                                onSuccess={() => {
-                                  fetchContacts(); // Refresh contact list to show customer badge if converted
-                                }}
-                              />
+                              {!readOnly && (
+                                <LogCallDialog 
+                                  contactId={contact.id}
+                                  contactName={contact.name}
+                                  userId={userId}
+                                  onSuccess={fetchContacts}
+                                />
+                              )}
                               <Link href={`/calling/${contact.id}`} className={buttonVariants({ variant: "ghost", size: "sm" })}>
                                 View History
                               </Link>
@@ -305,11 +421,11 @@ export function CallingModule({ userId }: { userId: string }) {
                   <TableBody>
                     {isLoadingLogs ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center">Loading...</TableCell>
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Loading...</TableCell>
                       </TableRow>
                     ) : logs.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground">No call logs found</TableCell>
+                        <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No call logs found</TableCell>
                       </TableRow>
                     ) : (
                       logs.map((log) => (
@@ -333,6 +449,7 @@ export function CallingModule({ userId }: { userId: string }) {
                               {log.price_given !== null && <div><span className="font-semibold">Given:</span> {log.price_given}</div>}
                               {log.price_asked !== null && <div><span className="font-semibold">Asked:</span> {log.price_asked}</div>}
                               {log.qty !== null && <div><span className="font-semibold">Qty:</span> {log.qty}</div>}
+                              {log.followup_date && <div><span className="font-semibold text-blue-600">Follow-up:</span> {format(new Date(log.followup_date), "dd/MM/yyyy")}</div>}
                             </div>
                           </TableCell>
                           <TableCell>{log.user?.username}</TableCell>

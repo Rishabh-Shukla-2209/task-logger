@@ -4,8 +4,7 @@ import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
-import { buttonVariants } from "@/components/ui/button";
+import { BackButton } from "@/components/shared/BackButton";
 
 export default async function ClientHistoryPage({ params }: { params: Promise<{ contactId: string }> }) {
   const { contactId } = await params;
@@ -35,9 +34,7 @@ export default async function ClientHistoryPage({ params }: { params: Promise<{ 
   return (
     <div className="p-8 space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center gap-4 mb-4">
-        <Link href="/sales/calling" className={buttonVariants({ variant: "ghost", size: "icon" })}>
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
+        <BackButton />
         <h2 className="text-3xl font-bold tracking-tight">Client History</h2>
       </div>
 

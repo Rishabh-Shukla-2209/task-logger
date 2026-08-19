@@ -23,6 +23,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { CallStatus } from "@prisma/client";
 import { toast } from "sonner";
+import { format, addDays } from "date-fns";
 
 export function LogCallDialog({
   contactId,
@@ -47,10 +48,14 @@ export function LogCallDialog({
   const [priceAsked, setPriceAsked] = useState("");
   const [qty, setQty] = useState("");
   const [convertToCustomer, setConvertToCustomer] = useState(false);
+  const [followupDate, setFollowupDate] = useState<string>(
+    format(addDays(new Date(), 1), "yyyy-MM-dd") // Default to next day
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!status) return toast.error("Please select a status");
+    if (status === "FOLLOW_UP" && !followupDate) return toast.error("Please select a follow-up date");
 
     setIsLoading(true);
 
@@ -69,6 +74,7 @@ export function LogCallDialog({
           price_given: status === "PRICING_ISSUE" ? priceGiven : undefined,
           price_asked: status === "PRICING_ISSUE" ? priceAsked : undefined,
           qty: status === "QTY_INSUFFICIENT" ? qty : undefined,
+          followup_date: status === "FOLLOW_UP" ? followupDate : undefined,
           convertToCustomer: convertToCustomer,
         }),
       });
@@ -100,6 +106,7 @@ export function LogCallDialog({
     setPriceAsked("");
     setQty("");
     setConvertToCustomer(false);
+    setFollowupDate(format(addDays(new Date(), 1), "yyyy-MM-dd"));
   };
 
   return (
@@ -133,6 +140,18 @@ export function LogCallDialog({
               </SelectContent>
             </Select>
           </div>
+
+          {status === "FOLLOW_UP" && (
+            <div className="space-y-2">
+              <Label>Follow-up Date *</Label>
+              <Input
+                type="date"
+                required
+                value={followupDate}
+                onChange={(e) => setFollowupDate(e.target.value)}
+              />
+            </div>
+          )}
 
           {status === "DIFFERENT_REQUIREMENT" && (
             <div className="space-y-2">

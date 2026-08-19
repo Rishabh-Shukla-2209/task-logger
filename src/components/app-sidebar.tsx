@@ -69,35 +69,18 @@ export function AppSidebar({ role }: { role: string }) {
       {
         label: "Service Desk",
         items: [
+          { title: "Client Calling", url: "/manager/calling", icon: PhoneCall },
           { title: "Queries", url: "/manager/queries", icon: LayoutDashboard },
-        ],
-      },
-      {
-        label: "Records",
-        items: [
           { title: "Quotations", url: "/manager/quotations", icon: FileText },
           { title: "Parts Ordering", url: "/manager/parts", icon: Package },
-          {
-            title: "Warranty Exchange",
-            url: "/manager/warranty",
-            icon: Shield,
-          },
+          { title: "Warranty Exchange", url: "/manager/warranty", icon: Shield },
           { title: "Internal Repair", url: "/manager/repairs", icon: Hammer },
-        ],
-      },
-      {
-        label: "Accounting",
-        items: [
           { title: "Sales", url: "/manager/sales", icon: FileText },
           { title: "Purchases", url: "/manager/purchases", icon: FileText },
           { title: "Repairs", url: "/manager/acc-repairs", icon: Hammer },
           { title: "Rent", url: "/manager/rent", icon: Package },
           { title: "Returns", url: "/manager/returns", icon: Package },
-          {
-            title: "Replacements",
-            url: "/manager/replacements",
-            icon: Package,
-          },
+          { title: "Replacements", url: "/manager/replacements", icon: Package },
           { title: "Followups", url: "/manager/followups", icon: ClipboardList },
         ],
       },
@@ -156,35 +139,18 @@ export function AppSidebar({ role }: { role: string }) {
       {
         label: "Service Desk",
         items: [
+          { title: "Client Calling", url: "/director/calling", icon: PhoneCall },
           { title: "Queries", url: "/director/queries", icon: LayoutDashboard },
-        ],
-      },
-      {
-        label: "Records",
-        items: [
           { title: "Quotations", url: "/director/quotations", icon: FileText },
           { title: "Parts Ordering", url: "/director/parts", icon: Package },
-          {
-            title: "Warranty Exchange",
-            url: "/director/warranty",
-            icon: Shield,
-          },
+          { title: "Warranty Exchange", url: "/director/warranty", icon: Shield },
           { title: "Internal Repair", url: "/director/repairs", icon: Hammer },
-        ],
-      },
-      {
-        label: "Accounting",
-        items: [
           { title: "Sales", url: "/director/sales", icon: FileText },
           { title: "Purchases", url: "/director/purchases", icon: FileText },
           { title: "Repairs", url: "/director/acc-repairs", icon: Hammer },
           { title: "Rent", url: "/director/rent", icon: Package },
           { title: "Returns", url: "/director/returns", icon: Package },
-          {
-            title: "Replacements",
-            url: "/director/replacements",
-            icon: Package,
-          },
+          { title: "Replacements", url: "/director/replacements", icon: Package },
           { title: "Followups", url: "/director/followups", icon: ClipboardList },
         ],
       },

@@ -7,15 +7,26 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get("search");
+    const ownerId = searchParams.get("ownerId");
 
     const session = await getServerSession(authOptions);
     if (!session || !session.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    let whereClause: any = {
-      user_id: session.user.id,
-    };
+    let whereClause: any = {};
+    
+    // Visibility logic:
+    // Sales can only see their own assigned data_owner_id
+    // Others (Admin, Manager, Director) can see all, or filter by ownerId
+    if (session.user.role === "SALES") {
+      whereClause.data_owner_id = session.user.id;
+    } else {
+      if (ownerId && ownerId !== "ALL") {
+        whereClause.data_owner_id = ownerId;
+      }
+    }
+
     if (search) {
       whereClause.OR = [
         { name: { contains: search, mode: "insensitive" } },
@@ -29,6 +40,14 @@ export async function GET(req: Request) {
       take: 100, // Added limit to prevent unbounded fetch on large datasets
       include: {
         customer: true,
+        data_owner: {
+          select: { username: true }
+        },
+        CallLogs: {
+          orderBy: { created_at: "desc" },
+          take: 1,
+          select: { status: true, followup_date: true, created_at: true }
+        }
       },
     });
 
@@ -50,11 +69,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { name, phone, location, customer_id } = body;
+    const { name, phone, location, customer_id, data_owner_id } = body;
 
-    if (!name || !phone) {
+    if (!name || !phone || !data_owner_id) {
       return NextResponse.json(
-        { error: "Name and phone are required" },
+        { error: "Name, phone, and Data Owner are required" },
         { status: 400 }
       );
     }
@@ -78,7 +97,8 @@ export async function POST(req: Request) {
         phone,
         location,
         customer_id: customer_id || null,
-        user_id: session.user.id,
+        user_id: session.user.id, // person who added it
+        data_owner_id, // person who owns the data
       },
     });
 

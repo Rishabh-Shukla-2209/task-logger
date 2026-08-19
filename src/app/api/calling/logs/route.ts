@@ -17,29 +17,37 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    let whereClause: any = {
-      user_id: session.user.id,
+    let whereClause: any = {};
+    
+    // Default to only today's data if no dates provided
+    let finalStartDate = startDate ? new Date(startDate) : new Date();
+    let finalEndDate = endDate ? new Date(endDate) : new Date();
+    
+    if (!startDate) {
+      finalStartDate.setHours(0, 0, 0, 0);
+    }
+    
+    if (!endDate) {
+      finalEndDate.setHours(23, 59, 59, 999);
+    } else {
+      finalEndDate.setHours(23, 59, 59, 999);
+    }
+
+    whereClause.created_at = {
+      gte: finalStartDate,
+      lte: finalEndDate
     };
+
+    if (session.user.role === "SALES") {
+      whereClause.user_id = session.user.id;
+    }
 
     if (contactId) {
       whereClause.contact_id = contactId;
     }
     
-    if (status && Object.values(CallStatus).includes(status)) {
+    if (status && Object.values(CallStatus).includes(status as CallStatus)) {
       whereClause.status = status;
-    }
-
-    if (startDate || endDate) {
-      whereClause.created_at = {};
-      if (startDate) {
-        whereClause.created_at.gte = new Date(startDate);
-      }
-      if (endDate) {
-        // To include the whole end date, set to end of day
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
-        whereClause.created_at.lte = end;
-      }
     }
 
     const logs = await prisma.callLog.findMany({
@@ -80,7 +88,8 @@ export async function POST(req: Request) {
       price_given, 
       price_asked, 
       qty,
-      convertToCustomer
+      convertToCustomer,
+      followup_date
     } = body;
 
     if (!contact_id || !user_id || !status) {
@@ -114,6 +123,7 @@ export async function POST(req: Request) {
           price_given: price_given ? parseFloat(price_given) : null,
           price_asked: price_asked ? parseFloat(price_asked) : null,
           qty: qty ? parseInt(qty, 10) : null,
+          followup_date: followup_date ? new Date(followup_date) : null,
         },
       });
 
